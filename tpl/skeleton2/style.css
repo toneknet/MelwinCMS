@@ -1,0 +1,450 @@
+/*
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+*/
+/*
+    Created on : 2014-maj-29, 14:44:19
+    Author     : Martin Tonek <martin@tonek.se>
+*/
+
+.development {
+    background-image:url('images/skeleton-grid.png');
+    background-repeat: repeat-y;
+    background-position: center center;
+}
+
+pre {
+  background-color: grey;
+  border:2px solid black;
+  padding:15px;
+  color:black;
+}
+
+
+/*.navigation  li
+{
+display: inline;
+list-style-type: none;
+padding-right: 20px;
+}*/
+
+.footer {
+    border-top:1px solid #000000;
+    margin-top:20px;
+    margin-bottom:10px;
+}
+
+/*ul.navigation
+{
+margin-left: 0;
+padding-left: 0;
+white-space: nowrap;
+}
+
+.navigation li
+{
+display: inline;
+list-style-type: none;
+}
+
+.navigation a { padding: 3px 10px; }
+
+.navigation a:link, .navigation a:visited
+{
+color: #fff;
+background-color: #036;
+text-decoration: none;
+}
+
+.navigation a:hover
+{
+color: #fff;
+background-color: #369;
+text-decoration: none;
+}*/
+
+
+
+
+
+/*
+#navcontainer ul
+{
+padding-left: 0;
+margin-left: 0;
+background-color: #036;
+color: White;
+float: left;
+width: 100%;
+font-family: arial, helvetica, sans-serif;
+}
+
+#navcontainer ul li { display: inline; }
+
+#navcontainer ul li a
+{
+padding: 0.2em 1em;
+background-color: #036;
+color: White;
+text-decoration: none;
+float: left;
+border-right: 1px solid #fff;
+}
+
+#navcontainer ul li a:hover
+{
+background-color: #369;
+color: #fff;
+}*/
+
+/*    nav {
+                width: 100%;
+                height: 40px;
+                clear: both;
+            }
+
+            ul.navigation {
+                float: left;
+                width: 100%;
+                margin: 0;
+                padding: 0;
+                list-style: none;
+                background-color: #036;
+                color: White;
+                 background-color: #fc9;
+            }
+
+            ul.navigation li {
+                display: inline;
+                 background-color: #0f9;
+
+            }
+
+            ul.navigation li a {
+                float: left;
+                line-height: 40px;
+                color: #000;
+                text-decoration: none;
+                margin: 0;
+                padding: 0 30px;
+                color: White;
+                border-right: 1px solid #fff;
+                width: 100px;
+                 background-color: #dc0000;
+            }
+
+             APPLIES THE ACTIVE STATE
+            ul.navigation .current a, ul.navigation li:hover > a  {
+                color: #000;
+                text-decoration: none;
+                background-color: #369;
+                color: #fff;
+                 background-color: #555;
+            }
+
+             THE SUBMENU LIST HIDDEN BY DEFAULT
+            ul.navigation  ul {
+                 display: none;
+                 list-style: none;
+                 background-color: #99b2cc;
+            }
+
+             WHEN THE FIRST LEVEL MENU ITEM IS HOVERED, THE CHILD MENU APPEARS
+            ul.navigation li:hover > ul {
+                list-style: none;
+                position: absolute;
+                display: block;
+                width: 920px;
+                 height: 45px;
+                margin: 40px 0 0 0;
+                 background-color: #777;
+            }
+
+            ul.navigation li:hover > ul li a {
+                float: left;
+                 line-height: 45px;
+                color: #000;
+                text-decoration: none;
+                margin: 0;
+                padding: 0 10px;
+                width: 100px;
+                 background-color: #aa0000;
+            }
+
+            ul.navigation li:hover > ul li a:hover {
+                color: #fff;
+                text-decoration: none;
+                background-color: #369;
+                background-color: #ccc;
+            }*/
+
+
+
+
+
+/*
+    TABELLER
+--------------------------------------------------------------------------------
+*/
+
+
+/*.dblist {
+	margin:0px;padding:0px;
+	width:100%;
+	border:1px solid #000000;
+}*/
+/*.dblist table{
+    border-collapse: collapse;
+        border-spacing: 0;
+	width:100%;
+	margin:0px;padding:0px;
+}
+.dblist tr:nth-child(odd){ background-color:#aad4ff; }
+.dblist tr:nth-child(even)    { background-color:#ffffff; }
+.dblist td{
+	vertical-align:middle;
+	border:1px solid #000000;
+	border-width:0px 1px 1px 0px;
+	text-align:left;
+	padding:7px;
+	font-size:10px;
+	font-family:Arial;
+	font-weight:normal;
+	color:#000000;
+}
+.dblist tr:last-child td{
+	border-width:0px 1px 0px 0px;
+}
+.dblist tr td:last-child{
+	border-width:0px 0px 1px 0px;
+}
+.dblist tr:last-child td:last-child{
+	border-width:0px 0px 0px 0px;
+}
+.dblist tr:first-child td{
+		background:-o-linear-gradient(bottom, #003366 5%, #003366 100%);	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #003366), color-stop(1, #003366) );
+	background:-moz-linear-gradient( center top, #003366 5%, #003366 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#003366", endColorstr="#003366");	background: -o-linear-gradient(top,#003366,003366);
+
+	background-color:#003366;
+	border:0px solid #000000;
+	text-align:center;
+	border-width:0px 0px 1px 1px;
+	font-size:14px;
+	font-family:Arial;
+	font-weight:bold;
+	color:#ffffff;
+}
+.dblist tr:first-child:hover td{
+	background:-o-linear-gradient(bottom, #003366 5%, #003366 100%);	background:-webkit-gradient( linear, left top, left bottom, color-stop(0.05, #003366), color-stop(1, #003366) );
+	background:-moz-linear-gradient( center top, #003366 5%, #003366 100% );
+	filter:progid:DXImageTransform.Microsoft.gradient(startColorstr="#003366", endColorstr="#003366");	background: -o-linear-gradient(top,#003366,003366);
+
+	background-color:#003366;
+}
+.dblist tr:first-child td:first-child{
+	border-width:0px 0px 1px 0px;
+}
+.dblist tr:first-child td:last-child{
+	border-width:0px 0px 1px 1px;
+}*/
+
+
+/*
+    NAVIGATION
+--------------------------------------------------------------------------------
+*/
+
+
+.cf:before,
+.cf:after {
+    content: " "; /* 1 */
+    display: table; /* 2 */
+}
+
+.cf:after {
+    clear: both;
+}
+
+.cf {
+    *zoom: 1;
+}
+
+/*body {
+  font: 9px "open sans", Arial, sans-serif;
+  background: rgb(97, 56, 56);
+}*/
+
+ul.navbar {
+  background: #003366; /* Old browsers */
+  width: 100%;
+  margin: 2em auto;
+}
+
+ul.navbar li {
+	float: left;
+	margin: 0;
+	position: relative;
+}
+
+ul.navbar li a {
+	display: block;
+	padding: 13px 15px;
+	color: #fff !important;
+	text-decoration: none;
+	text-transform: uppercase;
+	/*transition: all .2s ease-in-out;*/
+}
+
+ul.navbar li a:hover,
+ul.navbar li:hover > a {
+	background: #369;
+	color: #fff !important;
+}
+
+ul.navbar li ul {
+  margin: 0;
+  position: absolute;
+  background: #222;
+  left: 10%;
+  font-size: 10px;
+  min-width: 170px;
+  opacity: 0;
+  visibility: hidden;
+  z-index: 99;
+  /*transition: all .1s ease;*/
+}
+
+ul.navbar ul li { float: none; }
+ul.navbar li:hover > ul { opacity: 1; visibility: visible; left: 0; max-height: 250px }
+ul.navbar > li:hover > ul { opacity: 1; visibility: visible; top: 100%; left: 0; }
+ul.navbar li > ul  ul { top: 0; left: 90%; }
+ul.navbar li > ul li:hover > ul { left: 100%; }
+
+
+
+/*
+
+            OBS!! FUNGERAR
+
+
+nav {
+    background:#003366;
+    width:100%;
+}
+nav ul {
+    list-style:none;
+    width:100%;
+    position:relative;
+    background:#003366;
+}
+
+nav ul li {
+    float:left;
+}
+
+nav a,
+nav a:visited
+{
+    color:#fff;
+}
+nav ul > li a {
+    display:block;
+    float:left;
+    padding: 0 15px;
+    height: 25px;
+    line-height: 25px;
+    text-decoration: none;
+    color: #fff;
+    background:#003366;
+    border: 1px solid #ccc;
+}
+
+nav ul > li > a:hover{
+    background:#369;
+}
+
+nav ul > li > ul {
+    display:none;
+    position: absolute;
+    top:20px;
+    left:-30px;
+    width:100%;
+    background: #369;
+}
+
+nav ul > li:hover > ul {
+    display:block;
+}*/
+
+
+/*
+    FORMULÄR
+--------------------------------------------------------------------------------
+*/
+input[type="text"],
+	input[type="password"],
+	input[type="email"],
+	textarea,
+    select {
+        margin-bottom: 0px;
+    }
+
+p.small {
+  font-size: 10px;
+  padding:0px;
+  margin:0px;
+  margin-bottom: 20px;
+}
+
+/*
+    BREDDER
+--------------------------------------------------------------------------------
+*/
+
+.w50px { width:50px;}
+.w100px { width:100px;}
+.w200px { width:200px;}
+
+/*
+    INFOBOXAR
+--------------------------------------------------------------------------------
+*/
+/*.alert-box,*/
+.error,
+.success,
+.warning,
+.notice
+{
+    color:#555;
+    border-radius:10px;
+    font-family:Tahoma,Geneva,Arial,sans-serif;font-size:11px;
+    padding:10px 36px;
+    margin:10px;
+}
+/*.alert-box span {
+    font-weight:bold;
+    text-transform:uppercase;
+}*/
+.error {
+    background:#ffecec url('../../resources/icons/alertbox2_error.png') no-repeat 10px 50%;
+    border:1px solid #f5aca6;
+}
+.success {
+    background:#e9ffd9 url('../../resources/icons/alertbox2_success.png') no-repeat 10px 50%;
+    border:1px solid #a6ca8a;
+}
+.warning {
+    background:#fff8c4 url('../../resources/icons/alertbox2_warning.png') no-repeat 10px 50%;
+    border:1px solid #f2c779;
+}
+.notice {
+    background:#e3f7fc url('../../resources/icons/alertbox2_notice.png') no-repeat 10px 50%;
+    border:1px solid #8ed9f6;
+}
+
+.div_inline {
+  display: inline-block;
+}
+

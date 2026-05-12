@@ -1,0 +1,27 @@
+.menumaker__moduler{
+  line-height: 1.5;
+}
+.menumaker td {
+  vertical-align: top;
+}
+.menumaker td:nth-child(3) {
+  color: grey;
+}
+.menumaker th {
+  text-align: left;
+  border-bottom: 2px solid;
+}
+.menumaker tr {
+  border-bottom:1px solid grey;
+}
+
+.reload_palette {
+  filter: invert(53%) sepia(30%) saturate(6596%) hue-rotate(92deg) brightness(126%) contrast(127%);
+  width:16px;
+  height:16px;
+  margin-left: 16px;
+}
+
+.allowed_button_fields {
+  margin-bottom: 1rem;
+}

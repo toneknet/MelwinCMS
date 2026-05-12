@@ -1,0 +1,58 @@
+<?php
+
+/*
+ * The MIT License
+ *
+ * Copyright 2015 Martin Tonek <martin@tonek.se>.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+/**
+ * Description of cache
+ *
+ * @author Martin Tonek <martin@tonek.se>
+ */
+class cache {
+
+    //protected $value;
+
+    public function get($name,$ts) {
+        // -var spara ts någonstans? hur annars kolla filen?
+        print __FUNCTION__."<br />";
+        echo file_exists($name);
+
+
+
+        //$value = $_GET[$name];
+        //return $_GET[$name];
+        print "Hämtar: <b>{$name}</b> with ts: <b>{$ts}</b><br />";
+    }
+
+    public function set($name,$data) {
+        print __FUNCTION__."<br />";
+    }
+
+    public function remove($name) {
+        print __FUNCTION__."<br />";
+    }
+
+
+
+}

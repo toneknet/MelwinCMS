@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>500 – Serverfel</title>
+<style>
+body{
+    margin:0;
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#0f172a;
+    color:white;
+    font-family:system-ui,-apple-system,sans-serif;
+    text-align:center;
+}
+
+.container{
+    max-width:520px;
+    padding:40px;
+}
+
+h1{
+    font-size:48px;
+    margin:10px 0;
+    position:relative;
+    animation:glitch 2.5s infinite;
+}
+
+p{
+    color:#cbd5e1;
+    font-size:18px;
+}
+
+a{
+    display:inline-block;
+    margin-top:25px;
+    padding:10px 20px;
+    border-radius:6px;
+    background:#3b82f6;
+    color:white;
+    text-decoration:none;
+}
+
+a:hover{
+    background:#2563eb;
+}
+
+/* robot animation */
+
+.robot{
+    width:170px;
+    margin:auto;
+}
+
+/* blinking eyes */
+
+.eye{
+    animation:blink 3s infinite;
+}
+
+@keyframes blink{
+    0%,90%,100%{transform:scaleY(1);}
+    95%{transform:scaleY(0.1);}
+}
+
+/* smoke */
+
+.smoke{
+    opacity:0;
+    animation:smoke 3s infinite;
+}
+
+@keyframes smoke{
+    0%{opacity:0; transform:translateY(0);}
+    40%{opacity:0.6;}
+    100%{opacity:0; transform:translateY(-25px);}
+}
+
+/* glitch effect */
+
+@keyframes glitch{
+    0%{text-shadow:2px 0 red,-2px 0 cyan;}
+    20%{text-shadow:-2px 0 red,2px 0 cyan;}
+    40%{text-shadow:2px 2px red,-2px -2px cyan;}
+    60%{text-shadow:-2px -2px red,2px 2px cyan;}
+    80%{text-shadow:2px 0 red,-2px 0 cyan;}
+    100%{text-shadow:0 0 transparent;}
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<svg class="robot" viewBox="0 0 200 200">
+
+<!-- smoke -->
+
+<circle class="smoke" cx="100" cy="20" r="6" fill="#94a3b8"/>
+<circle class="smoke" cx="110" cy="10" r="5" fill="#94a3b8" style="animation-delay:1s"/>
+<circle class="smoke" cx="95" cy="5" r="4" fill="#94a3b8" style="animation-delay:2s"/>
+
+<!-- antenna -->
+
+<line x1="100" y1="35" x2="100" y2="15" stroke="#cbd5e1" stroke-width="4"/>
+<circle cx="100" cy="10" r="4" fill="#ef4444"/>
+
+<!-- head -->
+
+<rect x="50" y="40" width="100" height="70" rx="12" fill="#334155"/>
+
+<!-- eyes -->
+
+<circle class="eye" cx="80" cy="75" r="9" fill="#22c55e"/>
+<circle class="eye" cx="120" cy="75" r="9" fill="#ef4444"/>
+
+<!-- mouth -->
+
+<rect x="80" y="95" width="40" height="6" fill="#cbd5e1"/>
+
+<!-- body -->
+
+<rect x="60" y="115" width="80" height="50" rx="10" fill="#334155"/>
+
+<!-- broken arm -->
+
+<line x1="60" y1="130" x2="35" y2="150" stroke="#cbd5e1" stroke-width="6"/>
+<line x1="35" y1="150" x2="45" y2="160" stroke="#ef4444" stroke-width="6"/>
+
+</svg>
+
+<h1>500</h1>
+
+<p>
+Oj! Servern verkar ha fått ett litet sammanbrott.<br>
+Försök igen om en stund.
+</p>
+
+<a href="/">Till startsidan</a>
+
+</div>
+
+</body>
+</html>
