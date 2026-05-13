@@ -7,6 +7,7 @@ try {
     $tool      = new system_update_tool(['ajax' => 1]);
     $subaction = isset($_GET['subaction']) ? $_GET['subaction'] : '';
     $type      = isset($_GET['type']) && $_GET['type'] === 'addons' ? 'addons' : 'core';
+    $slug      = isset($_GET['slug']) ? (string)$_GET['slug'] : '';
 
     switch ($subaction) {
         case 'check_update':
@@ -31,6 +32,41 @@ try {
 
         case 'install_process':
             $result = $tool->ajax_install_process($type);
+            break;
+
+        // ---- Addon module management ----
+
+        case 'list_addon_modules':
+            $result = $tool->ajax_list_addon_modules();
+            break;
+
+        case 'addon_diff':
+            $result = $tool->ajax_addon_diff($slug);
+            break;
+
+        case 'addon_install_init':
+            $depSlugs = [];
+            if (!empty($_GET['deps'])) {
+                foreach (explode(',', $_GET['deps']) as $dep) {
+                    $dep = trim($dep);
+                    if ($dep !== '') {
+                        $depSlugs[] = $dep;
+                    }
+                }
+            }
+            $result = $tool->ajax_addon_install_init($slug, $depSlugs);
+            break;
+
+        case 'addon_install_process':
+            $result = $tool->ajax_addon_install_process($slug);
+            break;
+
+        case 'addon_install_all_init':
+            $result = $tool->ajax_addon_install_all_init();
+            break;
+
+        case 'addon_install_all_process':
+            $result = $tool->ajax_addon_install_all_process();
             break;
 
         default:

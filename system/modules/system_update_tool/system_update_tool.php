@@ -16,6 +16,7 @@ class system_update_tool
 
     public function __construct($arrModuleSettings = [])
     {
+        if (isset($GLOBALS['CONFIG']['displayDebug']) && $GLOBALS['CONFIG']['displayDebug'] && isSuperUser()) $this->showDebug = true;
         $this->repoUrls = [
             'core'   => trim((string)($GLOBALS['CONFIG']['repoUrl'] ?? '')),
             'addons' => trim((string)($GLOBALS['CONFIG']['repoUrlAddons'] ?? '')),
@@ -41,39 +42,71 @@ class system_update_tool
     private function render_ui()
     {
         print '<h2>' . $this->l('title') . '</h2>';
-
-        foreach (['core' => 'Core', 'addons' => 'Addons'] as $type => $label) {
-            $url    = $this->repoUrls[$type];
-            $cfgKey = $type === 'core' ? 'repoUrl' : 'repoUrlAddons';
-
-            print "<div style='margin-bottom:24px;border:1px solid #ccc;padding:16px;border-radius:4px;'>";
-            print "<h3 style='margin-top:0;'>{$label}</h3>";
-
-            if ($url === '') {
-                print '<p><em><code>' . $cfgKey . '</code> ' . $this->l('config_missing') . '</em></p>';
-                print "</div>";
-                continue;
-            }
-
-            print '<p>' . $this->l('repo') . ' <code>' . htmlspecialchars($url) . '</code></p>';
-
-            createBtn(['title' => $this->l('btn_check'),   'class' => "sut-check-{$type}"]);
-            if ($this->showDebug) createBtn(['title' => $this->l('btn_diff'),    'class' => "sut-diff-{$type}"]);
-            createBtn(['title' => $this->l('btn_backup'),  'class' => "sut-backup-{$type}"]);
-            createBtn(['title' => $this->l('btn_install'), 'class' => "sut-install-{$type}"]);
-
-            print "<div id='sut_msg_{$type}' style='margin-top:10px;color:#333;'></div>";
-            print "<div id='sut_bar_wrap_{$type}' style='height:16px;background:#eee;border-radius:4px;overflow:hidden;max-width:500px;margin-top:6px;display:none;'>";
-            print "<div id='sut_bar_{$type}' style='height:16px;background:#4CAF50;width:0%;transition:width .2s;'></div>";
-            print "</div>";
-            print "<div id='sut_done_{$type}' style='margin-top:8px;'></div>";
-            print "<div id='sut_diff_{$type}' style='margin-top:12px;display:none;'></div>";
-
-            print "</div>";
-        }
-
+        $this->render_core_section();
+        $this->render_addons_section();
         $this->render_js_lang();
         $this->render_js();
+    }
+
+    private function render_core_section(): void
+    {
+        $url  = $this->repoUrls['core'];
+        $type = 'core';
+
+        print "<div style='margin-bottom:24px;border:1px solid #ccc;padding:16px;border-radius:4px;'>";
+        print "<h3 style='margin-top:0;'>Core</h3>";
+
+        if ($url === '') {
+            print '<p><em><code>repoUrl</code> ' . $this->l('config_missing') . '</em></p>';
+            print "</div>";
+            return;
+        }
+
+        print '<p>' . $this->l('repo') . ' <code>' . htmlspecialchars($url) . '</code></p>';
+
+        createBtn(['title' => $this->l('btn_check'),   'class' => "sut-check-{$type}"]);
+        if ($this->showDebug) createBtn(['title' => $this->l('btn_diff'),   'class' => "sut-diff-{$type}"]);
+        if ($this->showDebug) createBtn(['title' => $this->l('btn_backup'), 'class' => "sut-backup-{$type}"]);
+        createBtn(['title' => $this->l('btn_install'), 'class' => "sut-install-{$type} sut-install-disabled"]);
+
+        print "<div id='sut_msg_{$type}' style='margin-top:10px;color:#333;'></div>";
+        print "<div id='sut_bar_wrap_{$type}' style='height:16px;background:#eee;border-radius:4px;overflow:hidden;max-width:500px;margin-top:6px;display:none;'>";
+        print "<div id='sut_bar_{$type}' style='height:16px;background:#4CAF50;width:0%;transition:width .2s;'></div>";
+        print "</div>";
+        print "<div id='sut_done_{$type}' style='margin-top:8px;'></div>";
+        print "<div id='sut_diff_{$type}' style='margin-top:12px;display:none;'></div>";
+
+        print "</div>";
+    }
+
+    private function render_addons_section(): void
+    {
+        $url = $this->repoUrls['addons'];
+
+        print "<div style='margin-bottom:24px;border:1px solid #ccc;padding:16px;border-radius:4px;'>";
+        print "<h3 style='margin-top:0;'>Addons</h3>";
+
+        if ($url === '') {
+            print '<p><em><code>repoUrlAddons</code> ' . $this->l('config_missing') . '</em></p>';
+            print "</div>";
+            return;
+        }
+
+        print '<p>' . $this->l('repo') . ' <code>' . htmlspecialchars($url) . '</code></p>';
+
+        print "<div style='display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;'>";
+        createBtn(['title' => $this->l('btn_check_addons'),      'class' => 'sut-addon-list-btn']);
+        createBtn(['title' => $this->l('btn_update_all_addons'), 'class' => 'sut-addon-update-all sut-install-disabled']);
+        print "</div>";
+
+        print "<div id='sut_msg_addons' style='margin-top:4px;color:#333;'></div>";
+        print "<div id='sut_bar_wrap_addons' style='height:16px;background:#eee;border-radius:4px;overflow:hidden;max-width:500px;margin-top:6px;display:none;'>";
+        print "<div id='sut_bar_addons' style='height:16px;background:#4CAF50;width:0%;transition:width .2s;'></div>";
+        print "</div>";
+        print "<div id='sut_done_addons' style='margin-top:8px;'></div>";
+        print "<div id='sut_addon_list' style='margin-top:12px;'></div>";
+
+        print "</div>";
     }
 
     private function render_js_lang(): void
@@ -86,15 +119,28 @@ class system_update_tool
             }
         }
         print '<script>var SUT_L = ' . json_encode($jsLang, JSON_UNESCAPED_UNICODE) . ';</script>';
+        print '<style>.sut-install-disabled{opacity:.35;pointer-events:none;cursor:default;}</style>';
     }
 
     private function render_js()
     {
-        print "<script> var showDebug = ". ($this->showDebug ? 'true' : 'false') . ";</script>";
+        print "<script>var showDebug = " . ($this->showDebug ? 'true' : 'false') . ";</script>";
         print <<<'JS'
 <script>
 (function(){
-    var ep = URLroot + 'system/ajax/ajaxRequest.php?action=system_update_tool';
+    var ep           = URLroot + 'system/ajax/ajaxRequest.php?action=system_update_tool';
+    var addonModules = {}; // slug -> module data, populated after list load
+
+    // ---- Shared helpers ----
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function escAttr(s) {
+        return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    }
+    function errMsg(res) { return SUT_L.error + ' ' + (res && res.error ? res.error : SUT_L.unknown); }
+
     function msg(type, text, pct, showBar) {
         var m = document.getElementById('sut_msg_' + type);
         var b = document.getElementById('sut_bar_' + type);
@@ -103,107 +149,37 @@ class system_update_tool
         if (b) b.style.width = (pct || 0) + '%';
         if (w) w.style.display = showBar ? '' : 'none';
     }
-
     function done(type, html) {
         var el = document.getElementById('sut_done_' + type);
         if (el) el.innerHTML = html || '';
     }
-
-    function err(res) { return SUT_L.error + ' ' + (res && res.error ? res.error : SUT_L.unknown); }
-
-    function doCheck(type) {
-        msg(type, SUT_L.checking, 0, true);
-        done(type, '');
-        $.getJSON(ep + '&subaction=check_update&type=' + type, function(res){
-            if (!res || !res.success) { msg(type, err(res), 100, true); return; }
-            msg(type, res.message, 100, true);
-            done(type, '<strong>' + SUT_L.differences + '</strong> ' + res.mismatch_count);
-        }).fail(function(){ msg(type, SUT_L.ajax_err_check, 100, true); });
+    function setInstallEnabled(type, enabled) {
+        var btn = document.querySelector('.sut-install-' + type);
+        if (!btn) return;
+        if (enabled) btn.classList.remove('sut-install-disabled');
+        else         btn.classList.add('sut-install-disabled');
     }
 
-    function doBackup(type) {
-        msg(type, SUT_L.backup_init, 0, true);
-        done(type, '');
-        $.getJSON(ep + '&subaction=backup_init&type=' + type, function(res){
-            if (!res || !res.success) { msg(type, err(res), 100, true); return; }
-            msg(type, res.message, res.progress || 0, true);
-            if (res.done) { done(type, '<strong>' + SUT_L.no_backup_files + '</strong>'); } else { processBackup(type); }
-        }).fail(function(){ msg(type, SUT_L.ajax_err_bk_init, 100, true); });
-    }
+    // ---- Shared diff renderer ----
 
-    function processBackup(type) {
-        $.getJSON(ep + '&subaction=backup_process&type=' + type, function(res){
-            if (!res || !res.success) { msg(type, err(res), 100, true); return; }
-            msg(type, res.message, res.progress || 0, true);
-            if (res.done) { done(type, '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.zip_path + '</code>'); } else { processBackup(type); }
-        }).fail(function(){ msg(type, SUT_L.ajax_err_backup, 100, true); });
-    }
-
-    function doInstall(type) {
-        if (!confirm(SUT_L.install_confirm.replace('{type}', type))) return;
-        msg(type, SUT_L.install_preparing, 0, true);
-        done(type, '');
-        $.getJSON(ep + '&subaction=install_init&type=' + type, function(res){
-            if (!res || !res.success) { msg(type, err(res), 100, true); return; }
-            if (res.done) { msg(type, res.message, 100, true); return; }
-            msg(type, res.message, 5, true);
-            if (res.backup_path) { done(type, '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.backup_path + '</code>'); }
-            processInstall(type);
-        }).fail(function(){ msg(type, SUT_L.ajax_err_in_init, 100, true); });
-    }
-
-    function processInstall(type) {
-        $.getJSON(ep + '&subaction=install_process&type=' + type, function(res){
-            if (!res || !res.success) { msg(type, err(res), 100, true); return; }
-            msg(type, res.message, res.progress || 0, true);
-            if (res.done) {
-                var doneHtml = (res.backup_path ? '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.backup_path + '</code><br>' : '')
-                             + '<strong style="color:#2a7a2a;">' + SUT_L.install_done + ' ' + res.installed + ' ' + SUT_L.files_updated + '</strong>';
-                if (res.errors && res.errors.length) {
-                    doneHtml += '<br><span style="color:#c0392b;">' + SUT_L.error + ' ' + res.errors.join(', ') + '</span>';
-                }
-                done(type, doneHtml);
-            } else {
-                processInstall(type);
-            }
-        }).fail(function(){ msg(type, SUT_L.ajax_err_install, 100, true); });
-    }
-
-    function doDiff(type) {
-        msg(type, SUT_L.diff_loading, 0, true);
-        done(type, '');
-        var diffEl = document.getElementById('sut_diff_' + type);
-        if (diffEl) { diffEl.style.display = 'none'; diffEl.innerHTML = ''; }
-
-        $.getJSON(ep + '&subaction=debug_diff&type=' + type, function(res){
-            if (!res || !res.success) { msg(type, err(res), 100, true); return; }
-            msg(type, SUT_L.diff_done, 100, true);
-            renderDiff(type, res);
-        }).fail(function(){ msg(type, SUT_L.ajax_err_diff, 100, true); });
-    }
-
-    function renderDiff(type, res) {
-        var diffEl = document.getElementById('sut_diff_' + type);
+    function renderDiffInElement(diffEl, res) {
         if (!diffEl) return;
-
-        var mod  = res.different   || [];
-        var add  = res.new_in_repo || [];
-        var del  = res.local_only  || [];
+        var mod   = res.different   || [];
+        var add   = res.new_in_repo || [];
+        var del   = res.local_only  || [];
         var total = mod.length + add.length + del.length;
 
         var html = '<div style="font-family:monospace;font-size:13px;">';
-
         html += '<div style="margin-bottom:10px;padding:8px 12px;background:#f5f5f5;border:1px solid #ddd;border-radius:4px;">';
         html += '<strong>' + SUT_L.diff_summary + '</strong> &nbsp;&nbsp;';
         html += '<span style="color:#e67e00;">&#9679; ' + mod.length + ' ' + SUT_L.diff_modified + '</span> &nbsp;&nbsp;';
         html += '<span style="color:#2a7a2a;">&#9679; ' + add.length + ' ' + SUT_L.diff_new + '</span> &nbsp;&nbsp;';
         if (showDebug) html += '<span style="color:#888;">&#9679; ' + del.length + ' ' + SUT_L.diff_local + '</span>';
-        if (total === 0) { html += ' &nbsp;&nbsp;<strong style="color:#555;">&#10003; ' + SUT_L.diff_clean + '</strong>'; }
+        if (total === 0) html += ' &nbsp;&nbsp;<strong style="color:#555;">&#10003; ' + SUT_L.diff_clean + '</strong>';
         html += '</div>';
 
         if (total === 0) {
-            html += '<div style="color:#555;padding:8px;">' + SUT_L.diff_no_diff + '</div>';
-            html += '</div>';
+            html += '<div style="color:#555;padding:8px;">' + SUT_L.diff_no_diff + '</div></div>';
             diffEl.innerHTML = html;
             diffEl.style.display = '';
             return;
@@ -215,10 +191,8 @@ class system_update_tool
         function row(prefix, color, bg, path) {
             return '<div style="padding:2px 12px;background:' + bg + ';white-space:nowrap;">'
                  + '<span style="color:' + color + ';font-weight:bold;display:inline-block;width:22px;">' + prefix + '</span>'
-                 + '<span style="color:#333;">' + escHtml(path) + '</span>'
-                 + '</div>';
+                 + '<span style="color:#333;">' + escHtml(path) + '</span></div>';
         }
-
         if (mod.length) {
             html += '<div style="padding:4px 12px 2px;background:#fff8e1;font-size:11px;color:#999;border-bottom:1px solid #eee;">' + SUT_L.diff_sec_modified + ' (' + mod.length + ')</div>';
             mod.sort().forEach(function(p){ html += row('M', '#e67e00', '#fffde7', p); });
@@ -231,18 +205,291 @@ class system_update_tool
             html += '<div style="padding:4px 12px 2px;background:#f5f5f5;font-size:11px;color:#999;border-bottom:1px solid #eee;">' + SUT_L.diff_sec_local + ' (' + del.length + ')</div>';
             del.sort().forEach(function(p){ html += row('?', '#888', '#fafafa', p); });
         }
-
         html += '</div></div></div>';
-
         diffEl.innerHTML = html;
         diffEl.style.display = '';
     }
 
-    function escHtml(s) {
-        return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    function renderDiff(type, res) {
+        var diffEl = document.getElementById('sut_diff_' + type);
+        renderDiffInElement(diffEl, res);
     }
 
-    ['core', 'addons'].forEach(function(type) {
+    // ---- Core functions ----
+
+    function doCheck(type) {
+        msg(type, SUT_L.checking, 0, true);
+        done(type, '');
+        setInstallEnabled(type, false);
+        $.getJSON(ep + '&subaction=check_update&type=' + type, function(res){
+            if (!res || !res.success) { msg(type, errMsg(res), 100, true); return; }
+            msg(type, res.message, 100, true);
+            done(type, '<strong>' + SUT_L.differences + '</strong> ' + res.mismatch_count);
+            setInstallEnabled(type, res.needs_update === true);
+        }).fail(function(){ msg(type, SUT_L.ajax_err_check, 100, true); });
+    }
+
+    function doBackup(type) {
+        msg(type, SUT_L.backup_init, 0, true);
+        done(type, '');
+        $.getJSON(ep + '&subaction=backup_init&type=' + type, function(res){
+            if (!res || !res.success) { msg(type, errMsg(res), 100, true); return; }
+            msg(type, res.message, res.progress || 0, true);
+            if (res.done) { done(type, '<strong>' + SUT_L.no_backup_files + '</strong>'); } else { processBackup(type); }
+        }).fail(function(){ msg(type, SUT_L.ajax_err_bk_init, 100, true); });
+    }
+
+    function processBackup(type) {
+        $.getJSON(ep + '&subaction=backup_process&type=' + type, function(res){
+            if (!res || !res.success) { msg(type, errMsg(res), 100, true); return; }
+            msg(type, res.message, res.progress || 0, true);
+            if (res.done) { done(type, '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.zip_path + '</code>'); } else { processBackup(type); }
+        }).fail(function(){ msg(type, SUT_L.ajax_err_backup, 100, true); });
+    }
+
+    function doInstall(type) {
+        if (!confirm(SUT_L.install_confirm.replace('{type}', type))) return;
+        msg(type, SUT_L.install_preparing, 0, true);
+        done(type, '');
+        $.getJSON(ep + '&subaction=install_init&type=' + type, function(res){
+            if (!res || !res.success) { msg(type, errMsg(res), 100, true); return; }
+            if (res.done) { msg(type, res.message, 100, true); return; }
+            msg(type, res.message, 5, true);
+            if (res.backup_path) { done(type, '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.backup_path + '</code>'); }
+            processInstall(type);
+        }).fail(function(){ msg(type, SUT_L.ajax_err_in_init, 100, true); });
+    }
+
+    function processInstall(type) {
+        $.getJSON(ep + '&subaction=install_process&type=' + type, function(res){
+            if (!res || !res.success) { msg(type, errMsg(res), 100, true); return; }
+            msg(type, res.message, res.progress || 0, true);
+            if (res.done) {
+                var doneHtml = (res.backup_path ? '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.backup_path + '</code><br>' : '')
+                             + '<strong style="color:#2a7a2a;">' + SUT_L.install_done + ' ' + res.installed + ' ' + SUT_L.files_updated + '</strong>';
+                if (res.errors && res.errors.length) doneHtml += '<br><span style="color:#c0392b;">' + SUT_L.error + ' ' + res.errors.join(', ') + '</span>';
+                done(type, doneHtml);
+            } else { processInstall(type); }
+        }).fail(function(){ msg(type, SUT_L.ajax_err_install, 100, true); });
+    }
+
+    function doDiff(type) {
+        msg(type, SUT_L.diff_loading, 0, true);
+        done(type, '');
+        var diffEl = document.getElementById('sut_diff_' + type);
+        if (diffEl) { diffEl.style.display = 'none'; diffEl.innerHTML = ''; }
+        $.getJSON(ep + '&subaction=debug_diff&type=' + type, function(res){
+            if (!res || !res.success) { msg(type, errMsg(res), 100, true); return; }
+            msg(type, SUT_L.diff_done, 100, true);
+            renderDiff(type, res);
+        }).fail(function(){ msg(type, SUT_L.ajax_err_diff, 100, true); });
+    }
+
+    // ---- Addon module helpers ----
+
+    function modMsg(slug, text, pct, showBar) {
+        var extra = document.getElementById('sut_mod_' + slug + '_extra');
+        if (extra) extra.style.display = '';
+        var m = document.getElementById('sut_mod_msg_' + slug);
+        var b = document.getElementById('sut_mod_bar_' + slug);
+        var w = document.getElementById('sut_mod_bar_wrap_' + slug);
+        if (m) m.innerHTML = text;
+        if (b) b.style.width = (pct || 0) + '%';
+        if (w) w.style.display = showBar ? '' : 'none';
+    }
+    function modDone(slug, html) {
+        var el = document.getElementById('sut_mod_done_' + slug);
+        if (el) el.innerHTML = html || '';
+    }
+    function setAddonUpdateAllEnabled(enabled) {
+        var btn = document.querySelector('.sut-addon-update-all');
+        if (!btn) return;
+        if (enabled) btn.classList.remove('sut-install-disabled');
+        else         btn.classList.add('sut-install-disabled');
+    }
+
+    // ---- Addon module list ----
+
+    function doListAddons() {
+        msg('addons', SUT_L.addon_loading, 0, true);
+        done('addons', '');
+        setAddonUpdateAllEnabled(false);
+        document.getElementById('sut_addon_list').innerHTML = '';
+        $.getJSON(ep + '&subaction=list_addon_modules', function(res){
+            if (!res || !res.success) { msg('addons', errMsg(res), 100, true); return; }
+            addonModules = {};
+            (res.modules || []).forEach(function(m) { addonModules[m.slug] = m; });
+            var total = (res.modules || []).length;
+            msg('addons', total + ' ' + SUT_L.addon_modules_found, 100, true);
+            renderAddonList(res);
+            setAddonUpdateAllEnabled((res.total_updates || 0) > 0);
+        }).fail(function(){ msg('addons', SUT_L.ajax_err_check, 100, true); });
+    }
+
+    function renderModuleRows(modules) {
+        var html = '';
+        modules.forEach(function(mod) {
+            var slug = mod.slug;
+            var statusBadge = '', actionBtns = '';
+
+            if (!mod.installed) {
+                statusBadge = '<span style="background:#2a7a2a;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;">' + SUT_L.addon_status_new + '</span>';
+                actionBtns  = '<button class="btn sut-mod-btn" data-slug="' + escHtml(slug) + '" data-action="install">' + SUT_L.addon_btn_install + '</button> ';
+            } else if (mod.needs_update) {
+                statusBadge = '<span style="background:#e67e00;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;">' + SUT_L.addon_status_update + ' (' + mod.mismatch_count + ')</span>';
+                actionBtns  = '<button class="btn sut-mod-btn" data-slug="' + escHtml(slug) + '" data-action="install">' + SUT_L.addon_btn_update + '</button> ';
+            } else {
+                statusBadge = '<span style="background:#888;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;">' + SUT_L.addon_status_ok + '</span>';
+            }
+            actionBtns += '<button class="btn sut-mod-btn" data-slug="' + escHtml(slug) + '" data-action="diff">' + SUT_L.addon_btn_diff + '</button>';
+
+            html += '<tr>';
+            html += '<td style="padding:8px 12px;border-bottom:1px solid #eee;"><strong>' + escHtml(mod.name) + '</strong>';
+            if (mod.description) html += '<br><small style="color:#888;">' + escHtml(mod.description) + '</small>';
+            if (mod.requires) {
+                var reqSlugs = mod.requires.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+                var reqHtml  = reqSlugs.map(function(rs) {
+                    var dep   = addonModules[rs];
+                    var color = (!dep || !dep.installed) ? '#c0392b' : '#27ae60';
+                    return '<span style="color:' + color + ';">' + escHtml(rs) + '</span>';
+                }).join(', ');
+                html += '<br><small>' + SUT_L.addon_requires + ' ' + reqHtml + '</small>';
+            }
+            html += '</td>';
+            html += '<td style="padding:8px;border-bottom:1px solid #eee;white-space:nowrap;">' + escHtml(mod.version || '–') + '</td>';
+            html += '<td style="padding:8px;border-bottom:1px solid #eee;">' + statusBadge + '</td>';
+            html += '<td style="padding:8px;border-bottom:1px solid #eee;white-space:nowrap;">' + actionBtns + '</td>';
+            html += '</tr>';
+
+            html += '<tr id="sut_mod_' + escHtml(slug) + '_extra" style="display:none;">';
+            html += '<td colspan="4" style="padding:4px 12px 10px;border-bottom:1px solid #ddd;background:#fafafa;">';
+            html += '<div id="sut_mod_msg_' + escHtml(slug) + '" style="font-size:13px;"></div>';
+            html += '<div id="sut_mod_bar_wrap_' + escHtml(slug) + '" style="height:10px;background:#eee;border-radius:4px;overflow:hidden;max-width:400px;margin-top:4px;display:none;">';
+            html += '<div id="sut_mod_bar_' + escHtml(slug) + '" style="height:10px;background:#4CAF50;width:0%;transition:width .2s;"></div></div>';
+            html += '<div id="sut_mod_done_' + escHtml(slug) + '" style="font-size:13px;margin-top:4px;"></div>';
+            html += '<div id="sut_mod_diff_' + escHtml(slug) + '" style="margin-top:8px;display:none;"></div>';
+            html += '</td></tr>';
+        });
+        return html;
+    }
+
+    function renderAddonList(res) {
+        var modules   = res.modules || [];
+        var listEl    = document.getElementById('sut_addon_list');
+        if (!modules.length) { listEl.innerHTML = '<p><em>' + SUT_L.addon_no_modules + '</em></p>'; return; }
+
+        var installed = modules.filter(function(m){ return  m.installed; });
+        var newMods   = modules.filter(function(m){ return !m.installed; });
+
+        var thStyle = 'text-align:left;padding:6px 12px;border-bottom:2px solid #ddd;background:#f5f5f5;font-size:12px;color:#555;';
+        var tableOpen = '<table style="width:100%;border-collapse:collapse;border:1px solid #ddd;border-radius:4px;overflow:hidden;margin-bottom:12px;">'
+                      + '<thead><tr>'
+                      + '<th style="' + thStyle + '">' + SUT_L.addon_col_name    + '</th>'
+                      + '<th style="' + thStyle + '">' + SUT_L.addon_col_version + '</th>'
+                      + '<th style="' + thStyle + '">' + SUT_L.addon_col_status  + '</th>'
+                      + '<th style="' + thStyle + '">' + SUT_L.addon_col_actions + '</th>'
+                      + '</tr></thead><tbody>';
+        var tableClose = '</tbody></table>';
+
+        var html = '';
+        if (installed.length) {
+            html += '<div style="font-weight:bold;color:#444;margin-bottom:4px;">' + SUT_L.addon_separator_installed + ' (' + installed.length + ')</div>';
+            html += tableOpen + renderModuleRows(installed) + tableClose;
+        }
+        if (newMods.length) {
+            html += '<div style="font-weight:bold;color:#444;margin-bottom:4px;margin-top:4px;">' + SUT_L.addon_separator_new + ' (' + newMods.length + ')</div>';
+            html += tableOpen + renderModuleRows(newMods) + tableClose;
+        }
+        listEl.innerHTML = html;
+    }
+
+    // ---- Addon diff ----
+
+    function doAddonDiff(slug) {
+        modMsg(slug, SUT_L.diff_loading, 0, true);
+        var diffEl = document.getElementById('sut_mod_diff_' + slug);
+        if (diffEl) { diffEl.style.display = 'none'; diffEl.innerHTML = ''; }
+        $.getJSON(ep + '&subaction=addon_diff&slug=' + encodeURIComponent(slug), function(res){
+            if (!res || !res.success) { modMsg(slug, errMsg(res), 100, true); return; }
+            modMsg(slug, SUT_L.diff_done, 100, true);
+            renderDiffInElement(diffEl, res);
+            if (diffEl) diffEl.style.display = '';
+        }).fail(function(){ modMsg(slug, SUT_L.ajax_err_diff, 100, true); });
+    }
+
+    // ---- Addon install/update (single module) ----
+
+    function doAddonInstall(slug) {
+        var mod      = addonModules[slug] || {};
+        var requires = mod.requires ? mod.requires.split(',').map(function(s){ return s.trim(); }).filter(Boolean) : [];
+        var deps     = requires.filter(function(depSlug) {
+            var dep = addonModules[depSlug];
+            return !dep || !dep.installed || dep.needs_update;
+        });
+
+        var confirmMsg = (SUT_L.addon_install_confirm || '').replace('{slug}', slug);
+        if (deps.length) {
+            confirmMsg += '\n\n' + SUT_L.addon_install_deps_also + '\n' + deps.join(', ');
+        }
+        if (!confirm(confirmMsg)) return;
+
+        modMsg(slug, SUT_L.install_preparing, 0, true);
+        modDone(slug, '');
+        var url = ep + '&subaction=addon_install_init&slug=' + encodeURIComponent(slug);
+        if (deps.length) url += '&deps=' + encodeURIComponent(deps.join(','));
+        $.getJSON(url, function(res){
+            if (!res || !res.success) { modMsg(slug, errMsg(res), 100, true); return; }
+            if (res.done) { modMsg(slug, res.message, 100, true); return; }
+            modMsg(slug, res.message, 5, true);
+            if (res.backup_path) modDone(slug, '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.backup_path + '</code>');
+            processAddonInstall(slug);
+        }).fail(function(){ modMsg(slug, SUT_L.ajax_err_in_init, 100, true); });
+    }
+
+    function processAddonInstall(slug) {
+        $.getJSON(ep + '&subaction=addon_install_process&slug=' + encodeURIComponent(slug), function(res){
+            if (!res || !res.success) { modMsg(slug, errMsg(res), 100, true); return; }
+            modMsg(slug, res.message, res.progress || 0, true);
+            if (res.done) {
+                var doneHtml = (res.backup_path ? '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.backup_path + '</code><br>' : '')
+                             + '<strong style="color:#2a7a2a;">' + SUT_L.install_done + ' ' + res.installed + ' ' + SUT_L.files_updated + '</strong>';
+                if (res.errors && res.errors.length) doneHtml += '<br><span style="color:#c0392b;">' + SUT_L.error + ' ' + res.errors.join(', ') + '</span>';
+                modDone(slug, doneHtml);
+            } else { processAddonInstall(slug); }
+        }).fail(function(){ modMsg(slug, SUT_L.ajax_err_install, 100, true); });
+    }
+
+    // ---- Addon update all ----
+
+    function doAddonInstallAll() {
+        if (!confirm(SUT_L.addon_install_all_confirm)) return;
+        msg('addons', SUT_L.install_preparing, 0, true);
+        done('addons', '');
+        $.getJSON(ep + '&subaction=addon_install_all_init', function(res){
+            if (!res || !res.success) { msg('addons', errMsg(res), 100, true); return; }
+            if (res.done) { msg('addons', res.message, 100, true); return; }
+            msg('addons', res.message, 5, true);
+            if (res.backup_path) done('addons', '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.backup_path + '</code>');
+            processAddonInstallAll();
+        }).fail(function(){ msg('addons', SUT_L.ajax_err_in_init, 100, true); });
+    }
+
+    function processAddonInstallAll() {
+        $.getJSON(ep + '&subaction=addon_install_all_process', function(res){
+            if (!res || !res.success) { msg('addons', errMsg(res), 100, true); return; }
+            msg('addons', res.message, res.progress || 0, true);
+            if (res.done) {
+                var doneHtml = (res.backup_path ? '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.backup_path + '</code><br>' : '')
+                             + '<strong style="color:#2a7a2a;">' + SUT_L.install_done + ' ' + res.installed + ' ' + SUT_L.files_updated + '</strong>';
+                if (res.errors && res.errors.length) doneHtml += '<br><span style="color:#c0392b;">' + SUT_L.error + ' ' + res.errors.join(', ') + '</span>';
+                done('addons', doneHtml);
+            } else { processAddonInstallAll(); }
+        }).fail(function(){ msg('addons', SUT_L.ajax_err_install, 100, true); });
+    }
+
+    // ---- Event listeners ----
+
+    ['core'].forEach(function(type) {
         var c = document.querySelector('.sut-check-'   + type);
         var d = document.querySelector('.sut-diff-'    + type);
         var b = document.querySelector('.sut-backup-'  + type);
@@ -251,6 +498,23 @@ class system_update_tool
         if (d) d.addEventListener('click', function(e){ e.preventDefault(); doDiff(type); });
         if (b) b.addEventListener('click', function(e){ e.preventDefault(); doBackup(type); });
         if (i) i.addEventListener('click', function(e){ e.preventDefault(); doInstall(type); });
+    });
+
+    var addonListBtn      = document.querySelector('.sut-addon-list-btn');
+    var addonUpdateAllBtn = document.querySelector('.sut-addon-update-all');
+    if (addonListBtn)      addonListBtn.addEventListener('click',      function(e){ e.preventDefault(); doListAddons(); });
+    if (addonUpdateAllBtn) addonUpdateAllBtn.addEventListener('click', function(e){ e.preventDefault(); doAddonInstallAll(); });
+
+    // Delegated listener for dynamically-rendered module buttons (install/update/diff)
+    document.addEventListener('click', function(e) {
+        var btn = e.target.closest('.sut-mod-btn');
+        if (!btn) return;
+        e.preventDefault();
+        var slug   = btn.getAttribute('data-slug');
+        var action = btn.getAttribute('data-action');
+        if (!slug) return;
+        if (action === 'install') { doAddonInstall(slug); }
+        else if (action === 'diff')    { doAddonDiff(slug); }
     });
 })();
 </script>
@@ -530,6 +794,481 @@ JS;
         ];
     }
 
+    // -------------------------------------------------------------------------
+    // Addon module management
+    // -------------------------------------------------------------------------
+
+    public function ajax_list_addon_modules(): array
+    {
+        $url = $this->repoUrls['addons'];
+        if ($url === '') {
+            return ['success' => false, 'error' => 'repoUrlAddons ' . $this->l('config_missing')];
+        }
+
+        $treeNodes = $this->fetch_repo_tree_nodes($url);
+        [$owner, $repo, $branch] = $this->get_repo_info('addons');
+
+        // Repo root dirs are module slugs: import_hockey/import_hockey.php
+        // Local install path:             system/modules/import_hockey/import_hockey.php
+        $repoIndex   = []; // repoPath (slug/file) => sha
+        $moduleSlugs = [];
+
+        foreach ($treeNodes as $node) {
+            $repoPath = str_replace('\\', '/', $node['path'] ?? '');
+            if ($repoPath === '') {
+                continue;
+            }
+            $parts = explode('/', $repoPath);
+            if (count($parts) < 2) {
+                continue; // root-level file (e.g. README.md), not a module
+            }
+            $slug = $parts[0];
+            if ($slug === '' || $slug[0] === '.') {
+                continue;
+            }
+            $moduleSlugs[$slug] = true;
+            if (($node['type'] ?? '') === 'blob') {
+                $repoIndex[$repoPath] = $node['sha'] ?? '';
+            }
+        }
+
+        $installed    = [];
+        $notInstalled = [];
+
+        foreach (array_keys($moduleSlugs) as $slug) {
+            $localDir    = ROOTPATH . 'system/modules/' . $slug;
+            $isInstalled = is_dir($localDir);
+            $slugPrefix  = $slug . '/';
+
+            $mismatchCount = 0;
+            foreach ($repoIndex as $repoPath => $repoSha) {
+                if (strpos($repoPath, $slugPrefix) !== 0) {
+                    continue;
+                }
+                $localPath = ROOTPATH . 'system/modules/' . $repoPath;
+                if (!is_file($localPath)) {
+                    $mismatchCount++;
+                    continue;
+                }
+                $localSha = $this->calculate_git_blob_sha($localPath);
+                if ($repoSha !== '' && $localSha !== $repoSha) {
+                    $mismatchCount++;
+                }
+            }
+
+            // Parse header from local file if installed, else fetch from repo
+            $mainRepoPath  = $slug . '/' . $slug . '.php';
+            $mainLocalPath = ROOTPATH . 'system/modules/' . $mainRepoPath;
+            $localHeader   = [];
+            $repoHeader    = [];
+
+            if ($isInstalled && is_file($mainLocalPath)) {
+                $content = @file_get_contents($mainLocalPath);
+                if ($content !== false) {
+                    $localHeader = $this->parse_module_header($content);
+                }
+            } elseif (!$isInstalled && isset($repoIndex[$mainRepoPath])) {
+                try {
+                    $rawUrl = 'https://raw.githubusercontent.com/'
+                        . rawurlencode($owner) . '/'
+                        . rawurlencode($repo) . '/'
+                        . rawurlencode($branch) . '/'
+                        . $mainRepoPath;
+                    $repoContent = $this->http_get_raw($rawUrl);
+                    $repoHeader  = $this->parse_module_header($repoContent);
+                } catch (Exception) {
+                    // silent fail — show slug as name
+                }
+            }
+
+            $header = array_merge($repoHeader, $localHeader);
+
+            $entry = [
+                'slug'           => $slug,
+                'installed'      => $isInstalled,
+                'needs_update'   => $isInstalled && $mismatchCount > 0,
+                'mismatch_count' => $mismatchCount,
+                'name'           => $header['name']        ?? $slug,
+                'version'        => $header['version']     ?? '',
+                'description'    => $header['description'] ?? '',
+                'author'         => $header['author']      ?? '',
+                'requires'       => $header['requires']    ?? '',
+            ];
+
+            if ($isInstalled) {
+                $installed[] = $entry;
+            } else {
+                $notInstalled[] = $entry;
+            }
+        }
+
+        usort($installed,    fn($a, $b) => strcasecmp($a['name'], $b['name']));
+        usort($notInstalled, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+
+        $totalUpdates = count(array_filter($installed, fn($m) => $m['needs_update']));
+
+        return [
+            'success'       => true,
+            'modules'       => array_merge($installed, $notInstalled),
+            'total_updates' => $totalUpdates,
+            'total_new'     => count($notInstalled),
+        ];
+    }
+
+    public function ajax_addon_diff(string $slug): array
+    {
+        $this->validate_slug($slug);
+
+        $treeNodes  = $this->fetch_repo_tree_nodes($this->repoUrls['addons']);
+        $slugPrefix = $slug . '/';
+
+        // repoPath (slug/file) => sha
+        $repoIndex = [];
+        foreach ($treeNodes as $node) {
+            if (($node['type'] ?? '') !== 'blob') {
+                continue;
+            }
+            $repoPath = str_replace('\\', '/', $node['path'] ?? '');
+            if (strpos($repoPath, $slugPrefix) !== 0) {
+                continue;
+            }
+            $repoIndex[$repoPath] = trim($node['sha'] ?? '');
+        }
+
+        $different   = [];
+        $new_in_repo = [];
+
+        foreach ($repoIndex as $repoPath => $repoSha) {
+            $localPath = ROOTPATH . 'system/modules/' . $repoPath;
+            if (!is_file($localPath)) {
+                $new_in_repo[] = $repoPath;
+                continue;
+            }
+            $localSha = $this->calculate_git_blob_sha($localPath);
+            if ($repoSha !== '' && $localSha !== $repoSha) {
+                $different[] = $repoPath;
+            }
+        }
+
+        $local_only = [];
+        $localDir   = ROOTPATH . 'system/modules/' . $slug . '/';
+        if (is_dir($localDir)) {
+            $localFiles = [];
+            $this->scan_dir($localDir, $slugPrefix, $localFiles);
+            foreach ($localFiles as $lf) {
+                if (!isset($repoIndex[$lf])) {
+                    $local_only[] = $lf;
+                }
+            }
+        }
+
+        sort($different);
+        sort($new_in_repo);
+        sort($local_only);
+
+        return [
+            'success'     => true,
+            'different'   => $different,
+            'new_in_repo' => $new_in_repo,
+            'local_only'  => $local_only,
+        ];
+    }
+
+    public function ajax_addon_install_init(string $slug, array $depSlugs = []): array
+    {
+        $this->validate_slug($slug);
+        foreach ($depSlugs as $dep) {
+            $this->validate_slug($dep);
+        }
+        if (!class_exists('ZipArchive')) {
+            throw new Exception($this->l('err_no_ziparchive'));
+        }
+
+        $treeNodes = $this->fetch_repo_tree_nodes($this->repoUrls['addons']);
+        [$owner, $repo, $branch] = $this->get_repo_info('addons');
+
+        $slugsToProcess = array_unique(array_merge([$slug], $depSlugs));
+        $toInstall      = []; // local relative paths (system/modules/slug/file)
+
+        foreach ($slugsToProcess as $currentSlug) {
+            $slugPrefix = $currentSlug . '/';
+            foreach ($treeNodes as $node) {
+                if (($node['type'] ?? '') !== 'blob') {
+                    continue;
+                }
+                $repoPath     = str_replace('\\', '/', $node['path'] ?? '');
+                if (strpos($repoPath, $slugPrefix) !== 0) {
+                    continue;
+                }
+                $localRelPath = 'system/modules/' . $repoPath;
+                $localPath    = ROOTPATH . $localRelPath;
+                $repoSha      = trim($node['sha'] ?? '');
+                $needs        = !is_file($localPath);
+                if (!$needs) {
+                    $localSha = $this->calculate_git_blob_sha($localPath);
+                    $needs    = ($repoSha !== '' && $localSha !== $repoSha);
+                }
+                if ($needs) {
+                    $toInstall[] = $localRelPath;
+                }
+            }
+        }
+
+        if (empty($toInstall)) {
+            return ['success' => true, 'done' => true, 'progress' => 100, 'message' => $this->l('msg_no_install')];
+        }
+
+        $toBackup = array_values(array_filter($toInstall, fn($p) => is_file(ROOTPATH . $p)));
+        $zipPath  = null;
+        if (!empty($toBackup)) {
+            $zipPath = $this->make_zip_path('addon_' . $slug);
+            $zip     = new ZipArchive();
+            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                throw new Exception('Kunde inte skapa backup-zip: ' . $zipPath);
+            }
+            foreach ($toBackup as $p) {
+                $zip->addFile(ROOTPATH . $p, $p);
+            }
+            $zip->close();
+        }
+
+        $_SESSION['sut_install_addon_' . $slug] = [
+            'files'     => array_values($toInstall),
+            'offset'    => 0,
+            'total'     => count($toInstall),
+            'chunk'     => 5,
+            'zipPath'   => $zipPath,
+            'owner'     => $owner,
+            'repo'      => $repo,
+            'branch'    => $branch,
+            'installed' => 0,
+        ];
+
+        $message = $zipPath
+            ? sprintf($this->l('msg_install_init'), count($toInstall), count($toBackup))
+            : sprintf($this->l('msg_install_init_nb'), count($toInstall));
+
+        return ['success' => true, 'done' => false, 'progress' => 5, 'message' => $message, 'backup_path' => $zipPath];
+    }
+
+    public function ajax_addon_install_process(string $slug): array
+    {
+        $this->validate_slug($slug);
+        $key = 'sut_install_addon_' . $slug;
+        if (!isset($_SESSION[$key])) {
+            return ['success' => false, 'error' => $this->l('err_no_install_sess')];
+        }
+
+        $state     = $_SESSION[$key];
+        $files     = $state['files']; // local relative paths
+        $offset    = intval($state['offset']);
+        $total     = intval($state['total']);
+        $chunk     = intval($state['chunk']);
+        $installed = intval($state['installed']);
+        $errors    = [];
+
+        $end = min($offset + $chunk, $total);
+        for ($i = $offset; $i < $end; $i++) {
+            try {
+                $this->download_and_write_addon_file($state['owner'], $state['repo'], $state['branch'], $files[$i]);
+                $installed++;
+            } catch (Exception $e) {
+                $errors[] = $files[$i] . ': ' . $e->getMessage();
+            }
+        }
+
+        $state['offset']    = $end;
+        $state['installed'] = $installed;
+        $_SESSION[$key]     = $state;
+
+        $progress = intval(5 + ($end / $total) * 95);
+        $done     = $end >= $total;
+        if ($done) {
+            unset($_SESSION[$key]);
+        }
+
+        return [
+            'success'     => true,
+            'done'        => $done,
+            'progress'    => $done ? 100 : $progress,
+            'message'     => sprintf($this->l('msg_install_progress'), $end, $total),
+            'installed'   => $installed,
+            'backup_path' => $state['zipPath'],
+            'errors'      => $errors,
+        ];
+    }
+
+    public function ajax_addon_install_all_init(): array
+    {
+        if (!class_exists('ZipArchive')) {
+            throw new Exception($this->l('err_no_ziparchive'));
+        }
+
+        $treeNodes = $this->fetch_repo_tree_nodes($this->repoUrls['addons']);
+        [$owner, $repo, $branch] = $this->get_repo_info('addons');
+        $toInstall = []; // local relative paths
+
+        foreach ($treeNodes as $node) {
+            if (($node['type'] ?? '') !== 'blob') {
+                continue;
+            }
+            $repoPath = str_replace('\\', '/', $node['path'] ?? '');
+            if ($repoPath === '') {
+                continue;
+            }
+            $parts = explode('/', $repoPath);
+            $slug  = $parts[0];
+            if ($slug === '' || $slug[0] === '.' || count($parts) < 2) {
+                continue;
+            }
+            $moduleDir = ROOTPATH . 'system/modules/' . $slug;
+            if (!is_dir($moduleDir)) {
+                continue; // only update already-installed modules
+            }
+
+            $localRelPath = 'system/modules/' . $repoPath;
+            $localPath    = ROOTPATH . $localRelPath;
+            $repoSha      = trim($node['sha'] ?? '');
+            $needs        = !is_file($localPath);
+            if (!$needs) {
+                $localSha = $this->calculate_git_blob_sha($localPath);
+                $needs    = ($repoSha !== '' && $localSha !== $repoSha);
+            }
+            if ($needs) {
+                $toInstall[] = $localRelPath;
+            }
+        }
+
+        if (empty($toInstall)) {
+            return ['success' => true, 'done' => true, 'progress' => 100, 'message' => $this->l('msg_no_install')];
+        }
+
+        $toBackup = array_values(array_filter($toInstall, fn($p) => is_file(ROOTPATH . $p)));
+        $zipPath  = null;
+        if (!empty($toBackup)) {
+            $zipPath = $this->make_zip_path('addons_update_all');
+            $zip     = new ZipArchive();
+            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                throw new Exception('Kunde inte skapa backup-zip: ' . $zipPath);
+            }
+            foreach ($toBackup as $p) {
+                $zip->addFile(ROOTPATH . $p, $p);
+            }
+            $zip->close();
+        }
+
+        $_SESSION['sut_install_addons_all'] = [
+            'files'     => array_values($toInstall),
+            'offset'    => 0,
+            'total'     => count($toInstall),
+            'chunk'     => 5,
+            'zipPath'   => $zipPath,
+            'owner'     => $owner,
+            'repo'      => $repo,
+            'branch'    => $branch,
+            'installed' => 0,
+        ];
+
+        $message = $zipPath
+            ? sprintf($this->l('msg_install_init'), count($toInstall), count($toBackup))
+            : sprintf($this->l('msg_install_init_nb'), count($toInstall));
+
+        return ['success' => true, 'done' => false, 'progress' => 5, 'message' => $message, 'backup_path' => $zipPath];
+    }
+
+    public function ajax_addon_install_all_process(): array
+    {
+        $key = 'sut_install_addons_all';
+        if (!isset($_SESSION[$key])) {
+            return ['success' => false, 'error' => $this->l('err_no_install_sess')];
+        }
+
+        $state     = $_SESSION[$key];
+        $files     = $state['files'];
+        $offset    = intval($state['offset']);
+        $total     = intval($state['total']);
+        $chunk     = intval($state['chunk']);
+        $installed = intval($state['installed']);
+        $errors    = [];
+
+        $end = min($offset + $chunk, $total);
+        for ($i = $offset; $i < $end; $i++) {
+            try {
+                $this->download_and_write_addon_file($state['owner'], $state['repo'], $state['branch'], $files[$i]);
+                $installed++;
+            } catch (Exception $e) {
+                $errors[] = $files[$i] . ': ' . $e->getMessage();
+            }
+        }
+
+        $state['offset']    = $end;
+        $state['installed'] = $installed;
+        $_SESSION[$key]     = $state;
+
+        $progress = intval(5 + ($end / $total) * 95);
+        $done     = $end >= $total;
+        if ($done) {
+            unset($_SESSION[$key]);
+        }
+
+        return [
+            'success'     => true,
+            'done'        => $done,
+            'progress'    => $done ? 100 : $progress,
+            'message'     => sprintf($this->l('msg_install_progress'), $end, $total),
+            'installed'   => $installed,
+            'backup_path' => $state['zipPath'],
+            'errors'      => $errors,
+        ];
+    }
+
+    private function parse_module_header(string $content): array
+    {
+        $header = [];
+        if (!preg_match('/\/\*+\s*(.*?)\s*\*+\//s', $content, $m)) {
+            return $header;
+        }
+        $block = $m[1];
+        foreach (['Name', 'Author', 'Author URI', 'Description', 'Version', 'Type', 'Requires'] as $field) {
+            if (preg_match('/^\s*' . preg_quote($field, '/') . '\s*:\s*(.+)$/im', $block, $fm)) {
+                $key          = strtolower(str_replace(' ', '_', $field));
+                $header[$key] = trim($fm[1]);
+            }
+        }
+        return $header;
+    }
+
+    private function validate_slug(string $slug): void
+    {
+        if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $slug)) {
+            throw new Exception('Ogiltigt modulnamn: ' . htmlspecialchars($slug));
+        }
+    }
+
+    private function download_and_write_addon_file(string $owner, string $repo, string $branch, string $localRelPath): void
+    {
+        // localRelPath = system/modules/{slug}/file.php
+        // repo path    = {slug}/file.php  (no system/modules/ prefix in addons repo)
+        $repoPath = substr($localRelPath, strlen('system/modules/'));
+        $encodedPath = implode('/', array_map('rawurlencode', explode('/', $repoPath)));
+        $rawUrl   = 'https://raw.githubusercontent.com/'
+            . rawurlencode($owner) . '/'
+            . rawurlencode($repo) . '/'
+            . rawurlencode($branch) . '/'
+            . $encodedPath;
+
+        $content   = $this->http_get_raw($rawUrl);
+        $localPath = ROOTPATH . $localRelPath;
+        $dir       = dirname($localPath);
+
+        if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+            throw new Exception('Kunde inte skapa katalog: ' . $dir);
+        }
+        if (file_put_contents($localPath, $content) === false) {
+            throw new Exception('Kunde inte skriva fil: ' . $localPath);
+        }
+    }
+
     private function download_and_write_file(string $owner, string $repo, string $branch, string $path): void
     {
         $encodedPath = implode('/', array_map('rawurlencode', explode('/', $path)));
@@ -638,15 +1377,11 @@ JS;
             return $files;
         }
 
-        // core: resources/, tpl/, system/ (excluding system/modules/), root files
-        foreach (['resources/' => ROOTPATH . 'resources/', 'tpl/' => ROOTPATH . 'tpl/'] as $prefix => $absDir) {
+        // core: resources/, tpl/, system/ (all, including system/modules/), root files
+        foreach (['resources/' => ROOTPATH . 'resources/', 'tpl/' => ROOTPATH . 'tpl/', 'system/' => ROOTPATH . 'system/'] as $prefix => $absDir) {
             if (is_dir($absDir)) {
                 $this->scan_dir($absDir, $prefix, $files);
             }
-        }
-
-        if (is_dir(ROOTPATH . 'system/')) {
-            $this->scan_dir_filtered(ROOTPATH . 'system/', 'system/', ['system/modules/'], $files);
         }
 
         foreach (['index.php', '.htaccess'] as $f) {
@@ -710,10 +1445,7 @@ JS;
             return strpos($path, 'system/modules/') === 0;
         }
 
-        if (strpos($path, 'system/modules/') === 0) {
-            return false;
-        }
-
+        // core: everything under these roots (including system/modules/ for built-in modules)
         $coreRoots = ['resources/', 'system/', 'tpl/'];
         $coreFiles = ['index.php', '.htaccess'];
 

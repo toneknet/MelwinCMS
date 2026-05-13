@@ -3,10 +3,12 @@
 $GLOBALS['LANG']['system_update_tool']['title']          = 'System Update Tool';
 $GLOBALS['LANG']['system_update_tool']['repo']           = 'Repo:';
 $GLOBALS['LANG']['system_update_tool']['config_missing'] = 'saknas i CONFIG.';
-$GLOBALS['LANG']['system_update_tool']['btn_check']      = 'Kontrollera';
-$GLOBALS['LANG']['system_update_tool']['btn_diff']       = 'Diff';
-$GLOBALS['LANG']['system_update_tool']['btn_backup']     = 'Backup';
-$GLOBALS['LANG']['system_update_tool']['btn_install']    = 'Installera';
+$GLOBALS['LANG']['system_update_tool']['btn_check']             = 'Kontrollera';
+$GLOBALS['LANG']['system_update_tool']['btn_diff']              = 'Diff';
+$GLOBALS['LANG']['system_update_tool']['btn_backup']            = 'Backup';
+$GLOBALS['LANG']['system_update_tool']['btn_install']           = 'Installera';
+$GLOBALS['LANG']['system_update_tool']['btn_check_addons']      = 'Kontrollera moduler';
+$GLOBALS['LANG']['system_update_tool']['btn_update_all_addons'] = 'Uppdatera alla';
 
 // --- JS (prefixed js_, stripped when output to browser) ---
 $GLOBALS['LANG']['system_update_tool']['js_checking']          = 'Kontrollerar repo...';
@@ -37,6 +39,27 @@ $GLOBALS['LANG']['system_update_tool']['js_diff_no_diff']      = 'Ingen skillnad
 $GLOBALS['LANG']['system_update_tool']['js_diff_sec_modified'] = 'Modified';
 $GLOBALS['LANG']['system_update_tool']['js_diff_sec_new']      = 'New in repo – will be added';
 $GLOBALS['LANG']['system_update_tool']['js_diff_sec_local']    = 'Local only – ej i repo, berörs ej';
+
+// --- Addon module management ---
+$GLOBALS['LANG']['system_update_tool']['js_addon_loading']             = 'Hämtar moduler från repo...';
+$GLOBALS['LANG']['system_update_tool']['js_addon_modules_found']       = 'moduler hittade.';
+$GLOBALS['LANG']['system_update_tool']['js_addon_no_modules']          = 'Inga moduler hittades i repot.';
+$GLOBALS['LANG']['system_update_tool']['js_addon_col_name']            = 'Namn';
+$GLOBALS['LANG']['system_update_tool']['js_addon_col_version']         = 'Version';
+$GLOBALS['LANG']['system_update_tool']['js_addon_col_status']          = 'Status';
+$GLOBALS['LANG']['system_update_tool']['js_addon_col_actions']         = 'Åtgärder';
+$GLOBALS['LANG']['system_update_tool']['js_addon_status_ok']           = 'Installerad';
+$GLOBALS['LANG']['system_update_tool']['js_addon_status_update']       = 'Uppdatering tillgänglig';
+$GLOBALS['LANG']['system_update_tool']['js_addon_status_new']          = 'Ny';
+$GLOBALS['LANG']['system_update_tool']['js_addon_btn_install']         = 'Installera';
+$GLOBALS['LANG']['system_update_tool']['js_addon_btn_update']          = 'Uppdatera';
+$GLOBALS['LANG']['system_update_tool']['js_addon_btn_diff']            = 'Diff';
+$GLOBALS['LANG']['system_update_tool']['js_addon_install_confirm']     = "Installera/uppdatera modulen '{slug}'?\n\nBerörda filer säkerhetskopieras automatiskt.";
+$GLOBALS['LANG']['system_update_tool']['js_addon_install_all_confirm'] = "Uppdatera alla installerade moduler med tillgängliga uppdateringar?\n\nBerörda filer säkerhetskopieras automatiskt.";
+$GLOBALS['LANG']['system_update_tool']['js_addon_separator_installed'] = 'Installerade moduler';
+$GLOBALS['LANG']['system_update_tool']['js_addon_separator_new']       = 'Tillgängliga moduler (ej installerade)';
+$GLOBALS['LANG']['system_update_tool']['js_addon_requires']            = 'Kräver:';
+$GLOBALS['LANG']['system_update_tool']['js_addon_install_deps_also']   = 'Följande beroenden installeras också:';
 
 // --- PHP / AJAX messages (%d = sprintf placeholder) ---
 $GLOBALS['LANG']['system_update_tool']['err_no_ziparchive']    = 'ZipArchive saknas på servern.';
