@@ -9,7 +9,24 @@ try {
     $type      = isset($_GET['type']) && $_GET['type'] === 'addons' ? 'addons' : 'core';
     $slug      = isset($_GET['slug']) ? (string)$_GET['slug'] : '';
 
+    if (in_array($subaction, ['local_install_process', 'addon_install_init', 'addon_install_process', 'addon_install_all_init', 'addon_install_all_process', 'addon_uninstall'], true)) {
+        if (!isSuperUser()) throw new Exception('Modulinstallation kräver superuser-behörighet.');
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SESSION['sut_uninstall_token'])
+            || !hash_equals($_SESSION['sut_uninstall_token'], (string)($_POST['token'] ?? ''))) {
+            throw new Exception('Ogiltig installationsbegäran. Ladda om sidan och försök igen.');
+        }
+    }
+
     switch ($subaction) {
+        case 'list_local_modules':
+            $result = $tool->ajax_list_local_modules();
+            break;
+        case 'local_install_plan':
+            $result = $tool->ajax_local_install_plan($slug);
+            break;
+        case 'local_install_process':
+            $result = $tool->ajax_local_install_process((string)($_GET['plan_id'] ?? ''));
+            break;
         case 'check_update':
             $result = $tool->ajax_check_update_needed($type);
             break;
@@ -81,7 +98,7 @@ try {
             $result = ['success' => false, 'error' => 'Okänd subaction: ' . $subaction];
             break;
     }
-} catch (Exception $e) {
+} catch (Throwable $e) {
     $result = ['success' => false, 'error' => $e->getMessage()];
 }
 

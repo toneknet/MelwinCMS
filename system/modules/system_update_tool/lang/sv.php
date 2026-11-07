@@ -1,4 +1,18 @@
 <?php
+$GLOBALS['LANG']['system_update_tool']['local_title'] = 'Lokala installationer';
+$GLOBALS['LANG']['system_update_tool']['local_help'] = 'Kopiera modulmapparna till system/modules/ med config/install.json och kontrollera sedan här. Installation använder enbart lokala filer och kräver inget addon-repo.';
+$GLOBALS['LANG']['system_update_tool']['local_check'] = 'Kontrollera lokala moduler';
+$GLOBALS['LANG']['system_update_tool']['js_local_loading'] = 'Kontrollerar lokala installationsmanifest...';
+$GLOBALS['LANG']['system_update_tool']['js_local_pending'] = 'Installation eller uppdatering behövs';
+$GLOBALS['LANG']['system_update_tool']['js_local_installed'] = 'Installerad';
+$GLOBALS['LANG']['system_update_tool']['js_local_install'] = 'Installera lokalt';
+$GLOBALS['LANG']['system_update_tool']['js_local_recheck'] = 'Kontrollera installation';
+$GLOBALS['LANG']['system_update_tool']['js_local_empty'] = 'Inga lokala moduler med config/install.json hittades.';
+$GLOBALS['LANG']['system_update_tool']['js_local_list_done'] = 'Lokala moduler kontrollerade.';
+$GLOBALS['LANG']['system_update_tool']['js_local_confirm'] = "Installera följande lokala moduler i denna ordning?\n\nÄven beroenden kontrolleras. Modulernas filer och berörda databastabeller säkerhetskopieras före installation. Inga filer hämtas från GitHub.";
+$GLOBALS['LANG']['system_update_tool']['js_local_installing'] = 'Säkerhetskopierar och installerar lokala moduler...';
+$GLOBALS['LANG']['system_update_tool']['js_local_complete'] = 'Lokal installation klar.';
+$GLOBALS['LANG']['system_update_tool']['js_local_failed'] = 'Anropet avbröts. Kontrollera lokala moduler igen för att se status och fortsätta installationen.';
 // --- UI ---
 $GLOBALS['LANG']['system_update_tool']['title']          = 'System Update Tool';
 $GLOBALS['LANG']['system_update_tool']['repo']           = 'Repo:';

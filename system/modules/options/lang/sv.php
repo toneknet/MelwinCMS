@@ -1,4 +1,5 @@
 <?PHP
+$GLOBALS['LANG']['options']['searchcaption'] = 'Sök inställning';
 $GLOBALS['LANG']['options']['id'] = array('','');
 $GLOBALS['LANG']['options']['option_key'] = array('','');
 $GLOBALS['LANG']['options']['option_value'] = array('','');

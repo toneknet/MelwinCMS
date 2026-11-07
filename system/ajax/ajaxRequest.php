@@ -65,10 +65,20 @@ define('URLBASE', $GLOBALS['CONFIG']['www-root']);
 // Hämta tillåtna sidor
 $db = db::getInstance();
 $arrTmp = $db->o_get_all('ajax','SELECT * FROM [table]');
+$arrAllowedScripts = [];
+$registeredAjaxNames = [];
 // $arrTmp = $db->o_get_all('','SELECT * FROM mt_ajax');
 foreach ($arrTmp as $key => $value) {
+  $registeredAjaxNames[$value['name']] = true;
+  if (!empty($value['deleted'])) continue;
   $arrAllowedScripts[$value['auth']][$value['name']] = $value['script'];
 
+}
+// Built-in CORE route for sites predating AJAX registration. Deleted entries stay disabled.
+if (!isset($registeredAjaxNames['menumaker'])) {
+  $arrAjax = [];
+  require MODPATH . 'menumaker/config/ajax.php';
+  $arrAllowedScripts[1]['menumaker'] = $arrAjax['menumaker']['script'];
 }
 /*print "<pre >";
 print_r($arrAllowedScripts);
@@ -89,12 +99,11 @@ foreach ($arrModuleLibs as $modulelib) {
 //print __FILE__ . "-" .  __LINE__ . "<br />";
 
 // Hämtar action länken
-$action = $_GET['action'];
+$action = isset($_GET['action']) && is_string($_GET['action']) ? $_GET['action'] : '';
 // Kollar om inloggad så man får lov att påverka
 $auth = auth::getInstance();
 //print __FILE__ . "-" .  __LINE__ . "<br />";
 if($auth->isAuthed()) {
-  $action = $_GET['action'];
 //  print __FILE__ . "-" .  __LINE__ . " - " . $action. "<br />";
   if(isset($arrAllowedScripts[1][$action])) {
     //print "Fanns!! (Auth)<br />";
@@ -126,6 +135,13 @@ if($auth->isAuthed()) {
 
 
     // $arrModuleLibs = array_diff(scandir(SYSPATH . "modules"), array('..', '.'));
+    // Module routes finish above; only legacy table requests need DCA definitions.
+    $table = isset($_GET['table']) && is_string($_GET['table']) ? $_GET['table'] : '';
+    if ($table === '') {
+      http_response_code(400);
+      alertbox('error', 'AJAX-anropet saknar giltig modulregistrering eller tabell.');
+      exit;
+    }
     foreach ($arrModuleLibs as $modulelib) {
 
           // Kolla språk här
@@ -152,7 +168,6 @@ if($auth->isAuthed()) {
 
 
     //språk med
-    $table=$_GET['table'];
 //print __FILE__ . "-" .  __LINE__ . "\n";
     if (!isset($GLOBALS['TABLE'][$table]['allowAjax'])) {
     //    print "#0005: Error occured!";

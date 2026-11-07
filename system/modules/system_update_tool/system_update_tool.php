@@ -14,6 +14,12 @@ class system_update_tool
     private $repoAuth = '';
     private $showDebug = false;
 
+    private function installer(): sut_installer
+    {
+        require_once __DIR__ . '/installer.php';
+        return new sut_installer();
+    }
+
     public function __construct($arrModuleSettings = [])
     {
         if (isset($GLOBALS['CONFIG']['displayDebug']) && $GLOBALS['CONFIG']['displayDebug'] && isSuperUser()) $this->showDebug = true;
@@ -44,6 +50,7 @@ class system_update_tool
         print '<h2>' . $this->l('title') . '</h2>';
         $this->render_core_section();
         $this->render_addons_section();
+        $this->render_local_section();
         $this->render_js_lang();
         $this->render_js();
     }
@@ -109,6 +116,15 @@ class system_update_tool
         print "</div>";
     }
 
+    private function render_local_section(): void
+    {
+        print "<div style='margin-bottom:24px;border:1px solid #ccc;padding:16px;border-radius:4px;'>";
+        print '<h3>' . $this->l('local_title') . '</h3><p>' . $this->l('local_help') . '</p>';
+        createBtn(['title' => $this->l('local_check'), 'class' => 'sut-local-check']);
+        print "<div id='sut_msg_local' role='status' style='margin-top:10px;'></div>";
+        print "<div id='sut_done_local' style='margin-top:8px;'></div><div id='sut_local_list' style='margin-top:12px;'></div></div>";
+    }
+
     private function render_js_lang(): void
     {
         if (empty($_SESSION['sut_uninstall_token'])) {
@@ -134,6 +150,7 @@ class system_update_tool
 (function(){
     var ep           = URLroot + 'system/ajax/ajaxRequest.php?action=system_update_tool';
     var addonModules = {}; // slug -> module data, populated after list load
+    var localBusy = false;
 
     // ---- Shared helpers ----
 
@@ -144,6 +161,16 @@ class system_update_tool
         return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     }
     function errMsg(res) { return SUT_L.error + ' ' + (res && res.error ? res.error : SUT_L.unknown); }
+
+    function databaseBackups(res) {
+        return Object.keys(res.database_backups || {}).map(function(slug){
+            return '<br><strong>' + SUT_L.backup_label + ' (' + escHtml(slug) + ')</strong> <code>' + escHtml(res.database_backups[slug]) + '</code>';
+        }).join('');
+    }
+
+    function postJSON(url, callback) {
+        return $.ajax({url: url, method: 'POST', dataType: 'json', data: {token: SUT_TOKEN}}).done(callback);
+    }
 
     function msg(type, text, pct, showBar) {
         var m = document.getElementById('sut_msg_' + type);
@@ -472,7 +499,7 @@ class system_update_tool
         modDone(slug, '');
         var url = ep + '&subaction=addon_install_init&slug=' + encodeURIComponent(slug);
         if (deps.length) url += '&deps=' + encodeURIComponent(deps.join(','));
-        $.getJSON(url, function(res){
+        postJSON(url, function(res){
             if (!res || !res.success) { modMsg(slug, errMsg(res), 100, true); return; }
             if (res.done) { modMsg(slug, res.message, 100, true); return; }
             modMsg(slug, res.message, 5, true);
@@ -482,14 +509,18 @@ class system_update_tool
     }
 
     function processAddonInstall(slug) {
-        $.getJSON(ep + '&subaction=addon_install_process&slug=' + encodeURIComponent(slug), function(res){
-            if (!res || !res.success) { modMsg(slug, errMsg(res), 100, true); return; }
+        postJSON(ep + '&subaction=addon_install_process&slug=' + encodeURIComponent(slug), function(res){
+            if (!res || !res.success) {
+                modMsg(slug, escHtml(errMsg(res)), 100, true);
+                if (res && res.backup_path) modDone(slug, '<strong>' + SUT_L.backup_label + '</strong> <code>' + escHtml(res.backup_path) + '</code>');
+                return;
+            }
             modMsg(slug, res.message, res.progress || 0, true);
             if (res.done) {
                 var doneHtml = (res.backup_path ? '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.backup_path + '</code><br>' : '')
                              + '<strong style="color:#2a7a2a;">' + SUT_L.install_done + ' ' + res.installed + ' ' + SUT_L.files_updated + '</strong>';
                 if (res.errors && res.errors.length) doneHtml += '<br><span style="color:#c0392b;">' + SUT_L.error + ' ' + res.errors.join(', ') + '</span>';
-                modDone(slug, doneHtml);
+                modDone(slug, doneHtml + databaseBackups(res));
             } else { processAddonInstall(slug); }
         }).fail(function(){ modMsg(slug, SUT_L.ajax_err_install, 100, true); });
     }
@@ -500,7 +531,7 @@ class system_update_tool
         if (!confirm(SUT_L.addon_install_all_confirm)) return;
         msg('addons', SUT_L.install_preparing, 0, true);
         done('addons', '');
-        $.getJSON(ep + '&subaction=addon_install_all_init', function(res){
+        postJSON(ep + '&subaction=addon_install_all_init', function(res){
             if (!res || !res.success) { msg('addons', errMsg(res), 100, true); return; }
             if (res.done) { msg('addons', res.message, 100, true); return; }
             msg('addons', res.message, 5, true);
@@ -510,17 +541,90 @@ class system_update_tool
     }
 
     function processAddonInstallAll() {
-        $.getJSON(ep + '&subaction=addon_install_all_process', function(res){
-            if (!res || !res.success) { msg('addons', errMsg(res), 100, true); return; }
+        postJSON(ep + '&subaction=addon_install_all_process', function(res){
+            if (!res || !res.success) {
+                msg('addons', escHtml(errMsg(res)), 100, true);
+                if (res && res.backup_path) done('addons', '<strong>' + SUT_L.backup_label + '</strong> <code>' + escHtml(res.backup_path) + '</code>');
+                return;
+            }
             msg('addons', res.message, res.progress || 0, true);
             if (res.done) {
                 var doneHtml = (res.backup_path ? '<strong>' + SUT_L.backup_label + '</strong> <code>' + res.backup_path + '</code><br>' : '')
                              + '<strong style="color:#2a7a2a;">' + SUT_L.install_done + ' ' + res.installed + ' ' + SUT_L.files_updated + '</strong>';
                 if (res.errors && res.errors.length) doneHtml += '<br><span style="color:#c0392b;">' + SUT_L.error + ' ' + res.errors.join(', ') + '</span>';
-                done('addons', doneHtml);
+                done('addons', doneHtml + databaseBackups(res));
             } else { processAddonInstallAll(); }
         }).fail(function(){ msg('addons', SUT_L.ajax_err_install, 100, true); });
     }
+
+    // ---- Local modules (no repository calls or file downloads) ----
+
+    function localButtons(disabled) {
+        localBusy = disabled;
+        document.querySelectorAll('.sut-local-check, .sut-local-install').forEach(function(btn){ btn.disabled = disabled; });
+    }
+
+    function listLocal(clearDone, completed) {
+        if (localBusy) return;
+        localButtons(true);
+        if (clearDone) done('local', '');
+        msg('local', SUT_L.local_loading);
+        $.getJSON(ep + '&subaction=list_local_modules', function(res){
+            if (!res || !res.success) { msg('local', escHtml(errMsg(res))); return; }
+            var html = '<table style="width:100%;border-collapse:collapse;"><tbody>';
+            (res.modules || []).forEach(function(mod){
+                html += '<tr><td style="padding:8px;">' + escHtml(mod.slug) + '</td><td style="padding:8px;">';
+                if (mod.error) html += '<span style="color:#c0392b;">' + escHtml(mod.error) + '</span>';
+                else {
+                    html += escHtml(mod.version) + ' — ' + (mod.needs_setup ? SUT_L.local_pending : SUT_L.local_installed);
+                    html += '</td><td style="padding:8px;"><button type="button" class="btn sut-local-install" data-slug="' + escHtml(mod.slug) + '">'
+                          + (mod.needs_setup ? SUT_L.local_install : SUT_L.local_recheck) + '</button>';
+                }
+                html += '</td></tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('sut_local_list').innerHTML = res.modules && res.modules.length ? html : '<p>' + SUT_L.local_empty + '</p>';
+            msg('local', completed ? SUT_L.local_complete : SUT_L.local_list_done);
+        }).fail(function(){ msg('local', SUT_L.ajax_err_check); }).always(function(){ localButtons(false); });
+    }
+
+    function planLocal(slug) {
+        if (localBusy) return;
+        localButtons(true);
+        $.getJSON(ep + '&subaction=local_install_plan&slug=' + encodeURIComponent(slug), function(res){
+            if (!res || !res.success) { msg('local', escHtml(errMsg(res))); localButtons(false); return; }
+            var summary = res.modules.map(function(mod){ return mod.slug + ' ' + mod.version; }).join('\n');
+            if (!confirm(SUT_L.local_confirm + '\n\n' + summary)) { localButtons(false); return; }
+            done('local', '');
+            processLocal(res.plan_id);
+        }).fail(function(){ msg('local', SUT_L.ajax_err_check); localButtons(false); });
+    }
+
+    function processLocal(planId) {
+        msg('local', SUT_L.local_installing);
+        postJSON(ep + '&subaction=local_install_process&plan_id=' + encodeURIComponent(planId), function(res){
+            if (res && res.backups) {
+                done('local', res.backups.map(function(backup){
+                    return '<div><strong>' + escHtml(backup.slug) + '</strong><br>' + SUT_L.backup_label + ' <code>' + escHtml(backup.files) + '</code>'
+                         + (backup.database ? '<br>' + SUT_L.backup_label + ' <code>' + escHtml(backup.database) + '</code>' : '') + '</div>';
+                }).join(''));
+            }
+            if (!res || !res.success) { msg('local', escHtml(errMsg(res))); localButtons(false); return; }
+            if (res.done) {
+                msg('local', SUT_L.local_complete);
+                localButtons(false);
+                // Refresh statuses while retaining the completed result and backup paths.
+                listLocal(false, true);
+            } else { processLocal(planId); }
+        }).fail(function(){ msg('local', SUT_L.local_failed); localButtons(false); });
+    }
+
+    var localCheck = document.querySelector('.sut-local-check');
+    if (localCheck) localCheck.addEventListener('click', function(e){ e.preventDefault(); listLocal(true); });
+    document.addEventListener('click', function(e){
+        var btn = e.target.closest('.sut-local-install');
+        if (btn) { e.preventDefault(); planLocal(btn.getAttribute('data-slug')); }
+    });
 
     // ---- Event listeners ----
 
@@ -568,6 +672,60 @@ JS;
     // -------------------------------------------------------------------------
     // AJAX entry points
     // -------------------------------------------------------------------------
+
+    private function localInstaller(): sut_local_install
+    {
+        require_once __DIR__ . '/local_install.php';
+        return new sut_local_install(ROOTPATH . 'system/modules', $this->installer());
+    }
+
+    private function localInstallScope(): string
+    {
+        return hash('sha256', json_encode([$GLOBALS['CONFIG']['dbPrefix'] ?? '', $GLOBALS['CONFIG']['dbPrefix_private'] ?? '']));
+    }
+
+    public function ajax_list_local_modules(): array
+    {
+        if (!isSuperUser()) throw new Exception('Modulinstallation kräver superuser-behörighet.');
+        return ['success' => true, 'modules' => $this->localInstaller()->discover()];
+    }
+
+    public function ajax_local_install_plan(string $slug): array
+    {
+        if (!isSuperUser()) throw new Exception('Modulinstallation kräver superuser-behörighet.');
+        $modules = $this->localInstaller()->plan($slug);
+        $id = bin2hex(random_bytes(16));
+        $_SESSION['sut_local_plan'] = ['id' => $id, 'scope' => $this->localInstallScope(), 'modules' => $modules, 'offset' => 0, 'backups' => []];
+        return ['success' => true, 'plan_id' => $id, 'modules' => $modules];
+    }
+
+    public function ajax_local_install_process(string $id): array
+    {
+        if (!isSuperUser()) throw new Exception('Modulinstallation kräver superuser-behörighet.');
+        $state = $_SESSION['sut_local_plan'] ?? null;
+        if (!$state || !hash_equals($state['id'], $id)) throw new Exception('Installationsplanen har ändrats. Kontrollera lokala moduler igen.');
+        if (!hash_equals($state['scope'], $this->localInstallScope())) throw new Exception('Databas-prefix har ändrats. Kontrollera lokala moduler igen.');
+        $offset = $state['offset'];
+        if ($offset >= count($state['modules'])) return ['success' => true, 'done' => true, 'backups' => $state['backups']];
+        $step = $state['modules'][$offset];
+        $backup = ['slug' => $step['slug'],
+            'files' => $this->make_zip_path('local_' . $step['slug'] . '_files_' . bin2hex(random_bytes(6))),
+            'database' => $this->make_zip_path('local_' . $step['slug'] . '_database_' . bin2hex(random_bytes(6)))];
+        try {
+            $this->localInstaller()->install($step, $backup['files'], $backup['database']);
+            $state['backups'][] = $backup;
+            $state['offset']++;
+            $_SESSION['sut_local_plan'] = $state;
+            return ['success' => true, 'done' => $state['offset'] >= count($state['modules']), 'backups' => $state['backups']];
+        } catch (Throwable $e) {
+            if (is_file($backup['files'])) {
+                if (!is_file($backup['database'])) $backup['database'] = null;
+                $state['backups'][] = $backup;
+            }
+            $_SESSION['sut_local_plan'] = $state;
+            return ['success' => false, 'error' => $e->getMessage(), 'backups' => $state['backups']];
+        }
+    }
 
     public function ajax_check_update_needed($type)
     {
@@ -941,10 +1099,16 @@ JS;
 
             $header = array_merge($repoHeader, $localHeader);
 
+            require_once __DIR__ . '/manifest.php';
+            $manifest = $isInstalled ? sut_manifest::read($localDir, $slug) : null;
+            $setupNeeded = $manifest !== null && $this->installer()->installedVersion($slug) !== $manifest['version'];
+            if ($manifest !== null) $header['requires'] = implode(',', array_keys($manifest['requires'] ?? []));
+
             $entry = [
                 'slug'           => $slug,
                 'installed'      => $isInstalled,
-                'needs_update'   => $isInstalled && $mismatchCount > 0,
+                'needs_update'   => $isInstalled && ($mismatchCount > 0 || $setupNeeded),
+                'setup_needed'   => $setupNeeded,
                 'mismatch_count' => $mismatchCount,
                 'name'           => $header['name']        ?? $slug,
                 'version'        => $header['version']     ?? '',
@@ -1046,6 +1210,8 @@ JS;
         } finally {
             $verify->close();
         }
+        // The archive is complete before registrations or module files are changed.
+        $this->installer()->uninstall($slug, $dir, $zipPath);
         foreach ($entries as $entry) {
             $removed = $entry['directory'] ? @rmdir($entry['path']) : @unlink($entry['path']);
             if (!$removed) {
@@ -1131,7 +1297,7 @@ JS;
         $treeNodes = $this->fetch_repo_tree_nodes($this->repoUrls['addons']);
         [$owner, $repo, $branch] = $this->get_repo_info('addons');
 
-        $slugsToProcess = array_unique(array_merge([$slug], $depSlugs));
+        $slugsToProcess = $this->resolve_addon_dependencies($treeNodes, $owner, $repo, $branch, array_unique(array_merge([$slug], $depSlugs)));
         $toInstall      = []; // local relative paths (system/modules/slug/file)
 
         foreach ($slugsToProcess as $currentSlug) {
@@ -1158,10 +1324,6 @@ JS;
             }
         }
 
-        if (empty($toInstall)) {
-            return ['success' => true, 'done' => true, 'progress' => 100, 'message' => $this->l('msg_no_install')];
-        }
-
         $toBackup = array_values(array_filter($toInstall, fn($p) => is_file(ROOTPATH . $p)));
         $zipPath  = null;
         if (!empty($toBackup)) {
@@ -1177,6 +1339,7 @@ JS;
         }
 
         $_SESSION['sut_install_addon_' . $slug] = [
+            'modules'   => $slugsToProcess,
             'files'     => array_values($toInstall),
             'offset'    => 0,
             'total'     => count($toInstall),
@@ -1198,7 +1361,11 @@ JS;
     public function ajax_addon_install_process(string $slug): array
     {
         $this->validate_slug($slug);
-        $key = 'sut_install_addon_' . $slug;
+        return $this->process_addon_install_state('sut_install_addon_' . $slug);
+    }
+
+    private function process_addon_install_state(string $key): array
+    {
         if (!isset($_SESSION[$key])) {
             return ['success' => false, 'error' => $this->l('err_no_install_sess')];
         }
@@ -1217,7 +1384,11 @@ JS;
                 $this->download_and_write_addon_file($state['owner'], $state['repo'], $state['branch'], $files[$i]);
                 $installed++;
             } catch (Exception $e) {
-                $errors[] = $files[$i] . ': ' . $e->getMessage();
+                // Keep the offset at the failed file; retry must never skip a failed download.
+                $state['offset'] = $i;
+                $state['installed'] = $installed;
+                $_SESSION[$key] = $state;
+                return ['success' => false, 'error' => $files[$i] . ': ' . $e->getMessage(), 'backup_path' => $state['zipPath']];
             }
         }
 
@@ -1225,9 +1396,23 @@ JS;
         $state['installed'] = $installed;
         $_SESSION[$key]     = $state;
 
-        $progress = intval(5 + ($end / $total) * 95);
+        $progress = $total > 0 ? intval(5 + ($end / $total) * 90) : 95;
         $done     = $end >= $total;
         if ($done) {
+            foreach ($state['modules'] as $moduleSlug) {
+                $dbBackup = $this->make_zip_path('addon_' . $moduleSlug . '_database_' . bin2hex(random_bytes(6)));
+                try {
+                    $this->installer()->install($moduleSlug, ROOTPATH . 'system/modules/' . $moduleSlug, $dbBackup);
+                    if (is_file($dbBackup)) $state['database_backups'][$moduleSlug] = $dbBackup;
+                    $_SESSION[$key] = $state;
+                } catch (Throwable $e) {
+                    if (is_file($dbBackup)) $state['database_backups'][$moduleSlug] = $dbBackup;
+                    $_SESSION[$key] = $state;
+                    return ['success' => false, 'error' => $moduleSlug . ': ' . $e->getMessage(),
+                        'backup_path' => $state['database_backups'][$moduleSlug] ?? $state['zipPath'],
+                        'database_backups' => $state['database_backups'] ?? []];
+                }
+            }
             unset($_SESSION[$key]);
         }
 
@@ -1239,131 +1424,65 @@ JS;
             'installed'   => $installed,
             'backup_path' => $state['zipPath'],
             'errors'      => $errors,
+            'database_backups' => $state['database_backups'] ?? [],
         ];
     }
 
     public function ajax_addon_install_all_init(): array
     {
-        if (!class_exists('ZipArchive')) {
-            throw new Exception($this->l('err_no_ziparchive'));
+        $slugs = [];
+        foreach ($this->fetch_repo_tree_nodes($this->repoUrls['addons']) as $node) {
+            $parts = explode('/', $node['path'] ?? '');
+            if (count($parts) > 1 && preg_match('/^[a-zA-Z0-9_\-]+$/', $parts[0])
+                && is_dir(ROOTPATH . 'system/modules/' . $parts[0])) $slugs[$parts[0]] = true;
         }
-
-        $treeNodes = $this->fetch_repo_tree_nodes($this->repoUrls['addons']);
-        [$owner, $repo, $branch] = $this->get_repo_info('addons');
-        $toInstall = []; // local relative paths
-
-        foreach ($treeNodes as $node) {
-            if (($node['type'] ?? '') !== 'blob') {
-                continue;
-            }
-            $repoPath = str_replace('\\', '/', $node['path'] ?? '');
-            if ($repoPath === '') {
-                continue;
-            }
-            $parts = explode('/', $repoPath);
-            $slug  = $parts[0];
-            if ($slug === '' || $slug[0] === '.' || count($parts) < 2) {
-                continue;
-            }
-            $moduleDir = ROOTPATH . 'system/modules/' . $slug;
-            if (!is_dir($moduleDir)) {
-                continue; // only update already-installed modules
-            }
-
-            $localRelPath = 'system/modules/' . $repoPath;
-            $localPath    = ROOTPATH . $localRelPath;
-            $repoSha      = trim($node['sha'] ?? '');
-            $needs        = !is_file($localPath);
-            if (!$needs) {
-                $localSha = $this->calculate_git_blob_sha($localPath);
-                $needs    = ($repoSha !== '' && $localSha !== $repoSha);
-            }
-            if ($needs) {
-                $toInstall[] = $localRelPath;
-            }
-        }
-
-        if (empty($toInstall)) {
-            return ['success' => true, 'done' => true, 'progress' => 100, 'message' => $this->l('msg_no_install')];
-        }
-
-        $toBackup = array_values(array_filter($toInstall, fn($p) => is_file(ROOTPATH . $p)));
-        $zipPath  = null;
-        if (!empty($toBackup)) {
-            $zipPath = $this->make_zip_path('addons_update_all');
-            $zip     = new ZipArchive();
-            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-                throw new Exception('Kunde inte skapa backup-zip: ' . $zipPath);
-            }
-            foreach ($toBackup as $p) {
-                $zip->addFile(ROOTPATH . $p, $p);
-            }
-            $zip->close();
-        }
-
-        $_SESSION['sut_install_addons_all'] = [
-            'files'     => array_values($toInstall),
-            'offset'    => 0,
-            'total'     => count($toInstall),
-            'chunk'     => 5,
-            'zipPath'   => $zipPath,
-            'owner'     => $owner,
-            'repo'      => $repo,
-            'branch'    => $branch,
-            'installed' => 0,
-        ];
-
-        $message = $zipPath
-            ? sprintf($this->l('msg_install_init'), count($toInstall), count($toBackup))
-            : sprintf($this->l('msg_install_init_nb'), count($toInstall));
-
-        return ['success' => true, 'done' => false, 'progress' => 5, 'message' => $message, 'backup_path' => $zipPath];
+        $slugs = array_keys($slugs);
+        if (!$slugs) return ['success' => true, 'done' => true, 'message' => $this->l('msg_no_install')];
+        $slug = array_shift($slugs);
+        $result = $this->ajax_addon_install_init($slug, $slugs);
+        $_SESSION['sut_install_addons_all'] = $_SESSION['sut_install_addon_' . $slug];
+        unset($_SESSION['sut_install_addon_' . $slug]);
+        return $result;
     }
 
     public function ajax_addon_install_all_process(): array
     {
-        $key = 'sut_install_addons_all';
-        if (!isset($_SESSION[$key])) {
-            return ['success' => false, 'error' => $this->l('err_no_install_sess')];
+        return $this->process_addon_install_state('sut_install_addons_all');
+    }
+
+    private function resolve_addon_dependencies(array $nodes, string $owner, string $repo, string $branch, array $requested): array
+    {
+        require_once __DIR__ . '/manifest.php';
+        $paths = [];
+        foreach ($nodes as $node) {
+            if (($node['type'] ?? '') === 'blob') $paths[$node['path']] = true;
         }
-
-        $state     = $_SESSION[$key];
-        $files     = $state['files'];
-        $offset    = intval($state['offset']);
-        $total     = intval($state['total']);
-        $chunk     = intval($state['chunk']);
-        $installed = intval($state['installed']);
-        $errors    = [];
-
-        $end = min($offset + $chunk, $total);
-        for ($i = $offset; $i < $end; $i++) {
-            try {
-                $this->download_and_write_addon_file($state['owner'], $state['repo'], $state['branch'], $files[$i]);
-                $installed++;
-            } catch (Exception $e) {
-                $errors[] = $files[$i] . ': ' . $e->getMessage();
+        $visiting = [];
+        $ordered = [];
+        $versions = [];
+        $visit = function ($slug) use (&$visit, &$visiting, &$ordered, &$versions, $paths, $owner, $repo, $branch) {
+            $this->validate_slug($slug);
+            if (isset($ordered[$slug])) return;
+            if (isset($visiting[$slug])) throw new Exception('Cirkul?rt modulberoende: ' . $slug);
+            if (!isset($paths[$slug . '/' . $slug . '.php'])) throw new Exception('Modulen saknas i addon-repot: ' . $slug);
+            $visiting[$slug] = true;
+            if (isset($paths[$slug . '/config/install.json'])) {
+                $url = 'https://raw.githubusercontent.com/' . rawurlencode($owner) . '/' . rawurlencode($repo) . '/' . rawurlencode($branch) . '/' . rawurlencode($slug) . '/config/install.json';
+                $manifest = sut_manifest::validate(json_decode($this->http_get_raw($url), true, 64, JSON_THROW_ON_ERROR), $slug);
+                $versions[$slug] = $manifest['version'];
+                foreach ($manifest['requires'] ?? [] as $dependency => $constraint) {
+                    $visit($dependency);
+                    preg_match('/^(>=|=)?(.*)$/', $constraint, $match);
+                    if (!isset($versions[$dependency]) || !version_compare($versions[$dependency], $match[2], ($match[1] ?? '') === '=' ? '==' : '>=')) {
+                        throw new Exception('Beroendet uppfyller inte versionskravet: ' . $dependency);
+                    }
+                }
             }
-        }
-
-        $state['offset']    = $end;
-        $state['installed'] = $installed;
-        $_SESSION[$key]     = $state;
-
-        $progress = intval(5 + ($end / $total) * 95);
-        $done     = $end >= $total;
-        if ($done) {
-            unset($_SESSION[$key]);
-        }
-
-        return [
-            'success'     => true,
-            'done'        => $done,
-            'progress'    => $done ? 100 : $progress,
-            'message'     => sprintf($this->l('msg_install_progress'), $end, $total),
-            'installed'   => $installed,
-            'backup_path' => $state['zipPath'],
-            'errors'      => $errors,
-        ];
+            unset($visiting[$slug]);
+            $ordered[$slug] = true;
+        };
+        foreach ($requested as $slug) $visit($slug);
+        return array_keys($ordered);
     }
 
     private function parse_module_header(string $content): array
