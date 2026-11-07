@@ -96,6 +96,16 @@ class menumaker {
               $form = new form();
               if ($intId>0) {
                   $form->loadData($this->dbFormSettings, $intId);
+              } elseif ($strAction === 'add') {
+                  // Preserve the position chosen with "after" or "into" when adding a page.
+                  if ($input->get('after') !== '' && intval($input->get('after')) > 0) {
+                      $after = $db->o_get_row('page', 'SELECT * FROM [table] WHERE deleted=0 AND id=' . intval($input->get('after')));
+                      if (is_array($after) && !empty($after)) {
+                          $form->setData(['pid' => intval($after['pid']), 'ordning' => intval($after['ordning']) + 1]);
+                      }
+                  } elseif ($input->get('into') !== '' && is_numeric($input->get('into'))) {
+                      $form->setData(['pid' => intval($input->get('into')), 'ordning' => 0]);
+                  }
               }
               // Function to add cancelbutton to existing FORM
               //addCancelButton2Form($form->MakeWithSettings($this->dbFormSettings,true));
@@ -383,6 +393,7 @@ class menumaker {
 //                                print "<a href=\"?action=move&id=" . $input->get('id') . "&into=" . $value['id'] . "\">" . getIconFull('transp2') . "</a>";
                             }
                             if ($this->SU) {
+                                /**  @disregard P1006 Undefined type */
                               print "<a href=\"" . getURLbyID($value['id']) . "\" target=\"_blank\" title=\"" . $GLOBALS['LANG']['menumaker']['action_buttons']['open'] . "\">" . getIconFull('open') . "</a>";
                             }
                             //[Edit] [Move] [Visible] [Delete] ( [After] [Inside] )

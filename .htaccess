@@ -1,0 +1,13 @@
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [L,QSA]
+#Enable PHP error logging to web browser
+php_flag display_startup_errors on
+php_flag display_errors on
+php_flag html_errors on
+# Enable PHP error logging to file
+
+<Files error.log>
+Deny from all
+</Files>
