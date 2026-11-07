@@ -31,6 +31,7 @@
 
 // SYSTEM
 $GLOBALS['LANG']['SYSTEM']['id'] = array('ID', '');
+$GLOBALS['LANG']['SYSTEM']['pid'] = array ('Parent ID','');
 $GLOBALS['LANG']['SYSTEM']['companyid'] = array('Företags ID', '');
 $GLOBALS['LANG']['SYSTEM']['deleted'] = array('Raderad', '');
 $GLOBALS['LANG']['SYSTEM']['ordning'] = array('Ordning', '');
@@ -141,9 +142,9 @@ $GLOBALS['LANG']['user']['active'] = array('Aktiv', '');
 $GLOBALS['LANG']['user']['deleted'] = array('Raderad', '');
 $GLOBALS['LANG']['user']['email'] = array('Epost', 'Här anger du personalens epostadress');
 $GLOBALS['LANG']['user']['companyid'] = array('Företags', 'Här anger du till vilket företagt användaren tillhör');
-$GLOBALS['LANG']['user']['oldpass'] = array('Ditt gamla lösenord', 'Här anger du det lösenord du har nu');
-$GLOBALS['LANG']['user']['newpass'] = array('Ditt nya lösenord', 'Här anger du det lösenord du vill byta till');
-$GLOBALS['LANG']['user']['newpass2'] = array('Verifiera ditt nya lösenord', 'Här anger du en gång till det nya lösenord du önskar');
+$GLOBALS['LANG']['user']['oldpass'] = array('Ditt gamla lösenord (OBS! ANGES BARA OM DU VILL BYTA LÖSENORD)', 'Här anger du det lösenord du har nu');
+$GLOBALS['LANG']['user']['newpass'] = array('Ditt nya lösenord (OBS! ANGES BARA OM DU VILL BYTA LÖSENORD)', 'Här anger du det lösenord du vill byta till');
+$GLOBALS['LANG']['user']['newpass2'] = array('Verifiera ditt nya lösenord (OBS! ANGES BARA OM DU VILL BYTA LÖSENORD)', 'Här anger du en gång till det nya lösenord du önskar');
 $GLOBALS['LANG']['user']['changepwdnextlogin'] = array('Användare måste byta lösenord vid nästa inloggning', 'Användaren tvingas byta lösenord vid nästa login');
 $GLOBALS['LANG']['user']['error_pass'] = "Det lösenord du har angivit stämmer inte överens med ditt lösenord";
 $GLOBALS['LANG']['user']['error_compare_pass'] = "Det nya lösenordet stämmer inte överens med varandra.";
@@ -172,6 +173,14 @@ $GLOBALS['LANG']['customers']['house_id'] = array('Fastighetsbeteckningen', '');
 $GLOBALS['LANG']['BUSCALENDER']['error_crash'] = "Det finns redan en bokning under denna period!<br><b>%s</b>";
 //$GLOBALS['LANG']['BUSCALENDER']['weekday']="%s <br> %s";
 //$GLOBALS['LANG']['BUSCALENDER']['footer']="<strong>&Ouml;vrigt:</strong> <br> %s";
+
+//  MODULE: LISTANDEDIT
+$GLOBALS['LANG']['LISTANDEDIT']['order'] = array('Här anger du listningens ordningsföljd', '');
+$GLOBALS['LANG']['LISTANDEDIT']['width'] = array('Här anger du listningens bredd', '');
+$GLOBALS['LANG']['LISTANDEDIT']['edit'] = array('Här anger du om listningen är ändringsbar', '');
+$GLOBALS['LANG']['LISTANDEDIT']['where'] = array('Här anger du listningens sökuttryck', '');
+$GLOBALS['LANG']['LISTANDEDIT']['table'] = array('Här anger du en databastabell', '');
+$GLOBALS['LANG']['LISTANDEDIT']['palette'] = array('Här anger du fältens ordningsföljd', '');
 
 //  MODULE: ONLYEDIT
 $GLOBALS['LANG']['MODULE']['ONLYEDIT']['edit'] = array('Här anger du nyckelfält för editering', '');
@@ -205,6 +214,7 @@ $GLOBALS['LANG']['FORMCATCHER']['error_callback'] = "Något har gått fel under 
 
 //  LIB: FORM
 $GLOBALS['LANG']['FORM']['submit'] = "Spara";
+$GLOBALS['LANG']['FORM']['select_0'] = "-- Inget Valt --";
 
 // GENERAL
 $GLOBALS['LANG']['GENERAL']['ok'] = "OK";
@@ -214,6 +224,9 @@ $GLOBALS['LANG']['GENERAL']['add'] = "Lägg till";
 $GLOBALS['LANG']['GENERAL']['edit'] = "Ändra";
 $GLOBALS['LANG']['GENERAL']['delete'] = "Radera";
 $GLOBALS['LANG']['GENERAL']['delete_confirm'] = "Är du säker på att du vill radera denna post?";
+$GLOBALS['LANG']['GENERAL']['action_confirm'] = "Är du säker på att du vill utföra denna åtgärd? Det går inte att ångra efteråt.";
+$GLOBALS['LANG']['GENERAL']['action_confirm_confirm'] = "Är du säker på att du vill utföra denna åtgärd? Det går inte att ångra efteråt. Skriv 'Ja' i rutan och bekräfta för att utföra åtgärd";
+$GLOBALS['LANG']['GENERAL']['confirm'] = "Bekräfta";
 $GLOBALS['LANG']['GENERAL']['yes'] = "Ja";
 $GLOBALS['LANG']['GENERAL']['no'] = "Nej";
 $GLOBALS['LANG']['GENERAL']['hide'] = "Dölj";
@@ -293,9 +306,9 @@ $GLOBALS['LANG']['GENERAL']['month']['long'][12] = "december";
 $GLOBALS['LANG']['ERROR']['db_error_prefix'] = "Något har blivit fel med databasen. Kontakta din systemadministratör för att få hjälp med att lösa problemet.";
 //$GLOBALS['LANG']['ERROR']['table_data_missing']="Missing TABLE data in file.";
 //$GLOBALS['LANG']['ERROR']['table_info_missing']="Missing TABLE info in config.";
-$GLOBALS['LANG']['ERROR']['table_data_missing'] = "Tabell data saknas från filen. Skapa filen i modulens undermapp. Gå till <a href=\"https://www.hbook.se/_dev/createTableData.php\">https://www.hbook.se/_dev/createTableData.php</a>";
+$GLOBALS['LANG']['ERROR']['table_data_missing'] = "Tabell data saknas från filen. Skapa modulen i inställningar.";
 $GLOBALS['LANG']['ERROR']['table_info_missing'] = "Tabell information saknas från konfigurationen.";
-
+$GLOBALS['LANG']['ERROR']['file_path_missing'] = "Sökvägen saknas. Skriptet avbryts.";
 $GLOBALS['LANG']['ERROR']['ajax'] = "Ett fel har uppstått";
 
 // UPLOAD
@@ -343,24 +356,29 @@ $GLOBALS['LANG']['login']['password_new'] = "Nytt lösenord";
 $GLOBALS['LANG']['login']['password2'] = "Bekräfta lösenord";
 $GLOBALS['LANG']['login']['email'] = "Epost";
 
-$GLOBALS['LANG']['login']['btnLogin'] = "Login";
-$GLOBALS['LANG']['login']['btnSignup'] = "Sign up";
-$GLOBALS['LANG']['login']['btnLostpassword'] = "Ask for password";
-$GLOBALS['LANG']['login']['btnChangepassword'] = "Change password";
+$GLOBALS['LANG']['login']['btnLogin'] = "Logga in";
+$GLOBALS['LANG']['login']['btnSignup'] = "Registrera";
+$GLOBALS['LANG']['login']['btnLostpassword'] = "Begär lösenord";
+$GLOBALS['LANG']['login']['btnChangepassword'] = "Byt lösenord";
 
-$GLOBALS['LANG']['login']['frmLogin'] = "LOGIN";
-$GLOBALS['LANG']['login']['frmSignup'] = "SIGN UP";
-$GLOBALS['LANG']['login']['frmLostpassword'] = "LOST PASSWORD";
-$GLOBALS['LANG']['login']['frmChangepassword'] = "CHANGE PASSWORD";
+$GLOBALS['LANG']['login']['frmLogin'] = "Logga in";
+$GLOBALS['LANG']['login']['frmSignup'] = "Registrera";
+$GLOBALS['LANG']['login']['frmLostpassword'] = "Glömt lösenord";
+$GLOBALS['LANG']['login']['frmChangepassword'] = "Byt lösenord";
 
 $GLOBALS['LANG']['login']['mathAdd'] = "Räkna ut summan av %s adderat med %s";
 $GLOBALS['LANG']['login']['mathSub'] = "Räkna ut differensen av %s subtraherat med %s";
 $GLOBALS['LANG']['login']['math'] = "Skriv summan här";
+
+$GLOBALS['LANG']['login']['lostpassword'] = "Glömt lösenord";
+$GLOBALS['LANG']['login']['signup'] = "Registrera";
+
+
 // Success
 $GLOBALS['LANG']['login']['signup_success'] = "Du har registrerat dig.";
 $GLOBALS['LANG']['login']['password_success'] = "Ditt lösenord har ändrats";
-
-$GLOBALS['LANG']['login']['lostpassword_success'] = "Om epostadressen finns i vårt register kommer ett mejl med information hur du återställer ditt lösenord skickas.";
+$GLOBALS['LANG']['login']['lostpassword_success'] = "Om epostadressen finns i vårt register kommer ett mejl med information om hur du återställer ditt lösenord skickas.";
+$GLOBALS['LANG']['login']['lostpassword_exceed'] = "Länken är ogiltig";
 
 // Errors
 $GLOBALS['LANG']['login']['error_empty'] = "Något fält är inte ifyllt korrekt";

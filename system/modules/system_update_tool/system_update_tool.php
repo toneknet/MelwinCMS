@@ -111,6 +111,10 @@ class system_update_tool
 
     private function render_js_lang(): void
     {
+        if (empty($_SESSION['sut_uninstall_token'])) {
+            $_SESSION['sut_uninstall_token'] = bin2hex(random_bytes(32));
+        }
+        print '<script>var SUT_TOKEN = ' . json_encode($_SESSION['sut_uninstall_token']) . ';</script>';
         $all  = $GLOBALS['LANG']['system_update_tool'] ?? [];
         $jsLang = [];
         foreach ($all as $key => $val) {
@@ -322,7 +326,7 @@ class system_update_tool
             if (!res || !res.success) { msg('addons', errMsg(res), 100, true); return; }
             addonModules = {};
             (res.modules || []).forEach(function(m) { addonModules[m.slug] = m; });
-            var total = (res.modules || []).length;
+            var total = (res.modules || []).filter(function(m){ return m.installed; }).length;
             msg('addons', total + ' ' + SUT_L.addon_modules_found, 100, true);
             renderAddonList(res);
             setAddonUpdateAllEnabled((res.total_updates || 0) > 0);
@@ -345,6 +349,7 @@ class system_update_tool
                 statusBadge = '<span style="background:#888;color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;">' + SUT_L.addon_status_ok + '</span>';
             }
             actionBtns += '<button class="btn sut-mod-btn" data-slug="' + escHtml(slug) + '" data-action="diff">' + SUT_L.addon_btn_diff + '</button>';
+            if (mod.installed) actionBtns += ' <button class="btn sut-mod-btn" data-slug="' + escHtml(slug) + '" data-action="uninstall">' + SUT_L.addon_btn_uninstall + '</button>';
 
             html += '<tr>';
             html += '<td style="padding:8px 12px;border-bottom:1px solid #eee;"><strong>' + escHtml(mod.name) + '</strong>';
@@ -398,12 +403,39 @@ class system_update_tool
         if (installed.length) {
             html += '<div style="font-weight:bold;color:#444;margin-bottom:4px;">' + SUT_L.addon_separator_installed + ' (' + installed.length + ')</div>';
             html += tableOpen + renderModuleRows(installed) + tableClose;
+        } else {
+            html += '<p>' + SUT_L.addon_no_installed + '</p>';
         }
+        html += '<button type="button" class="btn sut-store-btn" aria-expanded="false" aria-controls="sut_store">' + SUT_L.addon_store + ' (' + newMods.length + ')</button>';
+        html += '<div id="sut_store" hidden style="margin-top:12px;">';
         if (newMods.length) {
             html += '<div style="font-weight:bold;color:#444;margin-bottom:4px;margin-top:4px;">' + SUT_L.addon_separator_new + ' (' + newMods.length + ')</div>';
             html += tableOpen + renderModuleRows(newMods) + tableClose;
-        }
+        } else { html += '<p>' + SUT_L.addon_no_available + '</p>'; }
+        html += '</div>';
         listEl.innerHTML = html;
+    }
+
+    function doAddonUninstall(slug, btn) {
+        if (!confirm(SUT_L.addon_uninstall_confirm.replace('{slug}', slug))) return;
+        btn.disabled = true;
+        modMsg(slug, SUT_L.addon_uninstalling, 0, true);
+        $.ajax({url: ep + '&subaction=addon_uninstall', method: 'POST', dataType: 'json',
+            data: {slug: slug, token: SUT_TOKEN}
+        }).done(function(res){
+            if (!res || !res.success) {
+                modMsg(slug, escHtml(errMsg(res)), 100, false);
+                if (res && res.backup_path) modDone(slug, '<strong>' + SUT_L.backup_label + '</strong> <code>' + escHtml(res.backup_path) + '</code>');
+                return;
+            }
+            addonModules[slug].installed = false;
+            addonModules[slug].needs_update = false;
+            renderAddonList({modules: Object.keys(addonModules).map(function(key){ return addonModules[key]; })});
+            setAddonUpdateAllEnabled(Object.keys(addonModules).some(function(key){ return addonModules[key].needs_update; }));
+            msg('addons', escHtml(res.message), 100, false);
+            done('addons', '<strong>' + SUT_L.backup_label + '</strong> <code>' + escHtml(res.backup_path) + '</code>');
+        }).fail(function(){ modMsg(slug, SUT_L.ajax_err_uninstall, 100, false); })
+          .always(function(){ btn.disabled = false; });
     }
 
     // ---- Addon diff ----
@@ -510,6 +542,14 @@ class system_update_tool
 
     // Delegated listener for dynamically-rendered module buttons (install/update/diff)
     document.addEventListener('click', function(e) {
+        var storeBtn = e.target.closest('.sut-store-btn');
+        if (storeBtn) {
+            e.preventDefault();
+            var store = document.getElementById('sut_store');
+            store.hidden = !store.hidden;
+            storeBtn.setAttribute('aria-expanded', String(!store.hidden));
+            return;
+        }
         var btn = e.target.closest('.sut-mod-btn');
         if (!btn) return;
         e.preventDefault();
@@ -518,6 +558,7 @@ class system_update_tool
         if (!slug) return;
         if (action === 'install') { doAddonInstall(slug); }
         else if (action === 'diff')    { doAddonDiff(slug); }
+        else if (action === 'uninstall') { doAddonUninstall(slug, btn); }
     });
 })();
 </script>
@@ -923,6 +964,7 @@ JS;
         usort($notInstalled, fn($a, $b) => strcasecmp($a['name'], $b['name']));
 
         $totalUpdates = count(array_filter($installed, fn($m) => $m['needs_update']));
+        $_SESSION['sut_addon_slugs'] = array_keys($moduleSlugs);
 
         return [
             'success'       => true,
@@ -930,6 +972,91 @@ JS;
             'total_updates' => $totalUpdates,
             'total_new'     => count($notInstalled),
         ];
+    }
+
+    public function ajax_addon_uninstall(string $slug): array
+    {
+        $this->validate_slug($slug);
+        if (!in_array($slug, $_SESSION['sut_addon_slugs'] ?? [], true) || $slug === 'system_update_tool') {
+            throw new Exception('Modulen finns inte i den kontrollerade addon-listan.');
+        }
+        if (!class_exists('ZipArchive')) {
+            throw new Exception($this->l('err_no_ziparchive'));
+        }
+        $base = realpath(ROOTPATH . 'system/modules');
+        $dir = realpath(ROOTPATH . 'system/modules/' . $slug);
+        if ($base === false || $dir === false || dirname($dir) !== $base || basename($dir) !== $slug
+            || is_link(ROOTPATH . 'system/modules/' . $slug) || !is_dir($dir)) {
+            throw new Exception('Ogiltig eller saknad modulmapp.');
+        }
+        // Read dependencies from installed modules, including those outside the addon repo.
+        foreach (glob($base . '/*', GLOB_ONLYDIR) ?: [] as $otherDir) {
+            $other = basename($otherDir);
+            if ($other === $slug) continue;
+            $main = $otherDir . '/' . $other . '.php';
+            if (!is_file($main)) continue;
+            $content = file_get_contents($main);
+            if ($content === false) throw new Exception('Kunde inte kontrollera modulberoenden.');
+            $header = $this->parse_module_header($content);
+            $requires = array_map('trim', explode(',', $header['requires'] ?? ''));
+            if (in_array($slug, $requires, true)) {
+                throw new Exception('Modulen krävs av den installerade modulen: ' . $other);
+            }
+        }
+        $entries = [];
+        $iterator = new RecursiveIteratorIterator(
+            new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS),
+            RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($iterator as $entry) {
+            $path = $entry->getPathname();
+            $resolved = realpath($path);
+            if ($entry->isLink() || $resolved === false || strpos($resolved, $dir . DIRECTORY_SEPARATOR) !== 0) {
+                throw new Exception('Modulmappen innehåller en länk eller ogiltig sökväg. Avinstallation avbruten.');
+            }
+            $entries[] = ['path' => $path, 'directory' => $entry->isDir(),
+                'name' => 'system/modules/' . $slug . '/' . str_replace('\\', '/', substr($path, strlen($dir) + 1))];
+        }
+        $zipPath = $this->make_zip_path('addon_' . $slug . '_uninstall_' . bin2hex(random_bytes(6)));
+        $zip = new ZipArchive();
+        if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::EXCL) !== true) {
+            throw new Exception($this->l('err_zip_write'));
+        }
+        $ok = $zip->addEmptyDir('system/modules/' . $slug);
+        foreach ($entries as $entry) {
+            $added = $entry['directory'] ? $zip->addEmptyDir($entry['name']) : $zip->addFile($entry['path'], $entry['name']);
+            $ok = $added && $ok;
+        }
+        $closed = $zip->close();
+        if (!$ok || !$closed) throw new Exception('Backup misslyckades. Inga modulfiler har raderats.');
+        // Verify the saved archive against every original file before removing anything.
+        $verify = new ZipArchive();
+        if ($verify->open($zipPath, ZipArchive::CHECKCONS) !== true) {
+            throw new Exception('Backup kunde inte verifieras. Inga modulfiler har raderats.');
+        }
+        try {
+            foreach ($entries as $entry) {
+                if ($entry['directory']) continue;
+                $saved = $verify->getFromName($entry['name']);
+                $hash = hash_file('sha256', $entry['path']);
+                if ($saved === false || $hash === false || hash('sha256', $saved) !== $hash) {
+                    throw new Exception('Backup kunde inte verifieras. Inga modulfiler har raderats.');
+                }
+            }
+        } finally {
+            $verify->close();
+        }
+        foreach ($entries as $entry) {
+            $removed = $entry['directory'] ? @rmdir($entry['path']) : @unlink($entry['path']);
+            if (!$removed) {
+                return ['success' => false, 'error' => 'Avinstallationen avbröts vid: ' . $entry['name'] . '. Fullständig backup finns sparad.', 'backup_path' => $zipPath];
+            }
+        }
+        if (!@rmdir($dir)) {
+            return ['success' => false, 'error' => 'Kunde inte ta bort modulmappen. Fullständig backup finns sparad.', 'backup_path' => $zipPath];
+        }
+        unset($_SESSION['sut_install_addon_' . $slug]);
+        return ['success' => true, 'message' => sprintf($this->l('msg_addon_uninstalled'), $slug), 'backup_path' => $zipPath];
     }
 
     public function ajax_addon_diff(string $slug): array

@@ -53,7 +53,7 @@ $GLOBALS['CONFIG']['ftp_pass']          = "";
 $GLOBALS['CONFIG']['UpdateServer']      = "https://data.tonek.se/version.php";
 // Allow registration and lost password functions
 $GLOBALS['CONFIG']['allow_signup']      = 0;
-$GLOBALS['CONFIG']['allow_lostpassword']= 0;
+$GLOBALS['CONFIG']['allow_lostpassword']= 1;
 $GLOBALS['CONFIG']['allow_install']     = 1; // Ska denna vara här? Bättre att göra EXIT i fil?
 $GLOBALS['CONFIG']['allow_company']     = 0; // NYHET! Ska den användas? Tror ej det
 $GLOBALS['CONFIG']['allow_log']         = 0;

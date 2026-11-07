@@ -36,6 +36,14 @@ try {
 
         // ---- Addon module management ----
 
+        case 'addon_uninstall':
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST' || empty($_SESSION['sut_uninstall_token'])
+                || !hash_equals($_SESSION['sut_uninstall_token'], (string)($_POST['token'] ?? ''))) {
+                throw new Exception('Ogiltig avinstallationsbegäran. Ladda om sidan och försök igen.');
+            }
+            $result = $tool->ajax_addon_uninstall((string)($_POST['slug'] ?? ''));
+            break;
+
         case 'list_addon_modules':
             $result = $tool->ajax_list_addon_modules();
             break;

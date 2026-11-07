@@ -41,6 +41,14 @@ $GLOBALS['LANG']['system_update_tool']['js_diff_sec_new']      = 'New in repo �
 $GLOBALS['LANG']['system_update_tool']['js_diff_sec_local']    = 'Local only – ej i repo, berörs ej';
 
 // --- Addon module management ---
+$GLOBALS['LANG']['system_update_tool']['js_addon_store'] = 'Tillgängliga moduler';
+$GLOBALS['LANG']['system_update_tool']['js_addon_no_installed'] = 'Inga installerade addon-moduler hittades.';
+$GLOBALS['LANG']['system_update_tool']['js_addon_no_available'] = 'Inga fler moduler finns att installera.';
+$GLOBALS['LANG']['system_update_tool']['js_addon_btn_uninstall'] = 'Avinstallera';
+$GLOBALS['LANG']['system_update_tool']['js_addon_uninstall_confirm'] = "Vill du verkligen avinstallera modulen '{slug}'?\n\nHela modulmappen säkerhetskopieras innan den tas bort. Modulens data i databasen lämnas kvar.";
+$GLOBALS['LANG']['system_update_tool']['js_addon_uninstalling'] = 'Säkerhetskopierar och avinstallerar modulen...';
+$GLOBALS['LANG']['system_update_tool']['js_ajax_err_uninstall'] = 'Ajax-fel vid avinstallation. Kontrollera modulens status innan du försöker igen.';
+$GLOBALS['LANG']['system_update_tool']['msg_addon_uninstalled'] = 'Modulen %s har säkerhetskopierats och avinstallerats.';
 $GLOBALS['LANG']['system_update_tool']['js_addon_loading']             = 'Hämtar moduler från repo...';
 $GLOBALS['LANG']['system_update_tool']['js_addon_modules_found']       = 'moduler hittade.';
 $GLOBALS['LANG']['system_update_tool']['js_addon_no_modules']          = 'Inga moduler hittades i repot.';

@@ -1009,6 +1009,27 @@ function addJS($strFilename, $module = false)
 }
 
 /**
+ * A class wrapper for addCSS
+ * - require that the file live in the html directory and is named as {class}.css
+ * ex. 'system/modules/<b>messengerlite_notification</b>/html/<b>messengerlite_notification</b>.css'
+ * 
+ * - use as <b>addCSSM( __ CLASS __ );</b>
+ */
+function addCSSM($class) {
+  addCSS("system/modules/{$class}/html/{$class}.css");
+}
+
+/**
+ * A class wrapper for addJS
+ * - require that the file live in the html directory and is named as {class}.js
+ * ex. 'system/modules/<b>messengerlite_notification</b>/html/<b>messengerlite_notification</b>.js'
+ * 
+ * - use as <b>addJSM( __CLASS__ );</b>
+ */
+function addJSM($class) {
+  addJS("system/modules/{$class}/html/{$class}.js");
+}
+/**
  * MOVE TO TEMPLATE::
  * 
  * use  addCSS(__CLASS__, true); to add file from system/modules/[classname]/html/[classname].css
@@ -1407,12 +1428,33 @@ function toolbox($id, $arrButtons = array())
 {
   $output = "<div class=\"toolbox\">\n";
   foreach ($arrButtons as $key => $value) {
+    $xtra = "";
+    // parameters
+    if (isset($value['param']) && is_array($value['param'])) {
+        $strParam = "";
+        foreach ($value['param'] as $paramKey => $paramValue) {
+            $strParam .= "&amp;" . $paramKey . "=" . $paramValue;
+        }
+    } else {
+        $strParam = "";
+    }
+    if($key == "delete") {
+      $xtra = "onclick=\"return confirmDelete({$id});\"";
+    }
+
     $value['action'] = str_replace('action=', '', $value['action']);
     extract($value);
-    $output .= "\t<a href=\"?action={$action}&amp;id={$id}\" title=\"" . $value['label'] . "\">" . getIconFullSVG($icon, 16, 16) . "</a>\n";
+    $output .= "\t<a href=\"?action={$action}{$strParam}&amp;id={$id}\" title=\"" . $value['label'] . "\" {$xtra}>" . getIconFullSVG($icon, 16, 16) . "</a>\n";
   }
+  // var_dump(isset($arrButtons['edit']));
+  //$output .= getURL(array(),true);
+  //$output .= "\t<a href=\"https://www.mydomain.se/settings/screen?action=screen&amp;id=1&amp;subaction=show&amp;sid=8\"><img src=\"https://www.mydomain.se/resources/icons/invisible.png\" width=\"16\" height=\"16\" title=\"Är ej aktiv\" class=\"geticons \"></a>\n";
+  if (!isset($arrButtons['edit'])) {
   $output .= "\t<a href=\"?action=edit&amp;id={$id}\" title=\"" . $GLOBALS['LANG']['GENERAL']['edit'] . "\">" . getIconFullSVG('edit', 16, 16) . "</a>\n";
+  }
+  if (!isset($arrButtons['delete'])) {
   $output .= "\t<a href=\"?action=delete&amp;id={$id}\" title=\"" . $GLOBALS['LANG']['GENERAL']['delete'] . "\" onclick=\"return confirmDelete(8);\">" . getIconFullSVG('delete', 16, 16) . "</a>\n";
+  }
   $output .= "\t" . getIconFullSVG('controlpanel', 16, 16) . "\n";
   $output .= "</div>\n";
   return $output;
@@ -1521,7 +1563,6 @@ if (!function_exists('validateDates')) {
   }
 }
 
-
     if(!function_exists('json_validate')) {
       function json_validate($string) {
         json_decode($string);
@@ -1613,10 +1654,41 @@ function myCalledFunctionViaException() {
     }
 }
 
+
+/**
+ * Returns the module directory path of the calling file, relative to ROOTPATH.
+ * Returns empty string if the caller is not inside system/modules/.
+ *
+ * @return string e.g. "system/modules/booking"
+ */
+function getCallerModulePath(): string
+{
+    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 2);
+    $callerFile = $trace[1]['file'] ?? '';
+    if ($callerFile === '') return '';
+
+    $relative = str_replace('\\', '/', str_replace(ROOTPATH, '', $callerFile));
+    $parts = explode('/', $relative);
+
+    if (count($parts) >= 3 && $parts[0] === 'system' && $parts[1] === 'modules') {
+        return 'system/modules/' . $parts[2];
+    }
+
+    return dirname($relative);
+}
+
+
+
 function getSiteBaseURL() {
   $path = __DIR__ . "/configs/";
   require_once $path . 'config.inc.php';
   require_once $path . 'localconfig.inc.php';
   return $GLOBALS['CONFIG']['www-root'];
 
+}
+
+function getTplIcon($name) {
+  $file = TPLPATH . "/" . $GLOBALS['CONFIG']['template']."/icons/{$name}.svg";
+  if(!is_file($file)) return null;
+  return file_get_contents($file);
 }
