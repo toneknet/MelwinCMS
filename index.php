@@ -26,6 +26,10 @@ define('PLUGINPATH', dirname(__FILE__) . "/resources/plugins/");
 include(SYSPATH . "configs/config.inc.php");
 if (!is_file(SYSPATH . "configs/localconfig.inc.php")) {
   // Install Mode
+  if (!is_file(ROOTPATH . "install.php")) {
+    http_response_code(500);
+    die('Configuration is missing and the installer is unavailable. Please contact your system administrator for help. For more information, visit <a href="https://github.com/toneknet/MelwinCMS">MelwinCMS on GitHub</a>.');
+  }
   header("Location: install.php");
   die();
 } else {

@@ -221,10 +221,13 @@ class system_update_tool
         msg(type, SUT_L.checking, 0, true);
         done(type, '');
         setInstallEnabled(type, false);
+        var diffEl = document.getElementById('sut_diff_' + type);
+        if (diffEl) { diffEl.style.display = 'none'; diffEl.innerHTML = ''; }
         $.getJSON(ep + '&subaction=check_update&type=' + type, function(res){
             if (!res || !res.success) { msg(type, errMsg(res), 100, true); return; }
             msg(type, res.message, 100, true);
             done(type, '<strong>' + SUT_L.differences + '</strong> ' + res.mismatch_count);
+            renderDiff(type, res);
             setInstallEnabled(type, res.needs_update === true);
         }).fail(function(){ msg(type, SUT_L.ajax_err_check, 100, true); });
     }
@@ -528,14 +531,28 @@ JS;
     public function ajax_check_update_needed($type)
     {
         $mismatch = $this->compare_repo_file_hashes_with_local(false, $type);
-        $relevant_statuses = ['hash_mismatch', 'size_mismatch', 'missing_local_file', 'missing_local_directory', 'local_hash_error', 'local_size_error'];
+        // Match the files that install_init will actually update (not directories).
+        $relevant_statuses = ['hash_mismatch', 'size_mismatch', 'missing_local_file', 'local_hash_error'];
         $relevant = array_filter($mismatch, function($row) use ($relevant_statuses) {
             return in_array($row['status'] ?? '', $relevant_statuses, true);
         });
         $count = count($relevant);
+        $different = [];
+        $new_in_repo = [];
+        foreach ($relevant as $path => $meta) {
+            if ($meta['status'] === 'missing_local_file') {
+                $new_in_repo[] = $path;
+            } else {
+                $different[] = $path;
+            }
+        }
+        sort($different);
+        sort($new_in_repo);
         return [
             'success'        => true,
             'mismatch_count' => $count,
+            'different'     => $different,
+            'new_in_repo'   => $new_in_repo,
             'needs_update'   => $count > 0,
             'message'        => $count > 0
                 ? sprintf($this->l('msg_update_needed'), $count)

@@ -22,7 +22,8 @@ $(document).ready(function() {
     if (typeof pageLink === 'undefined' || pageLink == null || pid == 0) return;
     pageTmp = JSON.parse(pageLink);
     var pagename = $(this).val();
-    pagename.toLowerCase();
+    pagename = pagename.toLowerCase();
+    console.log(pagename);
     pagename = pagename
     .replace(/å/g, 'a')
     .replace(/ä/g, 'a')
@@ -33,7 +34,7 @@ $(document).ready(function() {
     pagename = pagename.replace(/_+/g, '_'); // Replace multiple underscores with a single one
     // pagename = pagename.replace(/^_/, ''); // Remove leading underscore
     pagename = pagename.replace(/_$/, ''); // Remove trailing underscore
-    // console.log(pagename);
+    console.log(pagename);
     $("#db_src").val(pagename);
     // if ()
     // pageLink 
