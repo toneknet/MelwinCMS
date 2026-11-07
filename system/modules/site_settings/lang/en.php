@@ -1,4 +1,5 @@
 <?php
+$GLOBALS['LANG']['site_settings']['template_missing'] = 'not available';
 $GLOBALS['LANG']['site_settings']['title'] = 'Site settings';
 $GLOBALS['LANG']['site_settings']['intro'] = 'Settings from config.inc.php and localconfig.inc.php. Only local overrides are saved. Changes apply on the next request. Flags use 0 (off) or 1 (on).';
 $GLOBALS['LANG']['site_settings']['denied'] = 'Only superusers can manage installation settings.';

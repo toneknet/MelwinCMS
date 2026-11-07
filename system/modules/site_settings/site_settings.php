@@ -10,6 +10,17 @@ class site_settings
     private static function esc($value) { return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8'); }
     private function text($key) { return $GLOBALS['LANG']['site_settings'][$key] ?? $key; }
 
+    private static function templates()
+    {
+        $path = defined('TPLPATH') ? TPLPATH : dirname(rtrim(SYSPATH, '/\\')) . '/tpl/';
+        $names = [];
+        foreach (is_dir($path) ? scandir($path) : [] as $name) {
+            if ($name[0] !== '.' && is_dir($path . '/' . $name) && is_file($path . '/' . $name . '/index.tpl')) $names[] = $name;
+        }
+        natcasesort($names);
+        return array_values($names);
+    }
+
     // Read files separately: runtime CONFIG may also contain module and company settings.
     public static function readFile($path)
     {
@@ -85,6 +96,7 @@ class site_settings
         $defaults = self::readFile(SYSPATH . 'configs/config.inc.php');
         $local = self::readFile($path);
         $effective = array_replace($defaults, $local);
+        $templates = self::templates();
         if (empty($_SESSION['site_settings_token'])) $_SESSION['site_settings_token'] = bin2hex(random_bytes(32));
         $message = '';
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['site_settings_save'])) {
@@ -100,6 +112,7 @@ class site_settings
                     if (self::secret($key) && $posted[$key] === '') continue;
                     try { $value = self::convert($posted[$key], $sample); }
                     catch (InvalidArgumentException $e) { throw new RuntimeException('invalid'); }
+                    if ($key === 'template' && $value !== $sample && !in_array($value, $templates, true)) throw new RuntimeException('invalid');
                     if ((strpos($key, 'allow_') === 0 || in_array($key, ['displayErrors', 'displayDebug', 'noExecSql'], true)) && !in_array($value, [0, 1, '0', '1', false, true], true)) throw new RuntimeException('invalid');
                     if ($key === 'timezone' && !in_array($value, timezone_identifiers_list(), true)) throw new RuntimeException('invalid');
                     // Do not freeze inherited defaults into the local file.
@@ -120,7 +133,15 @@ class site_settings
             $id = 'site-setting-' . bin2hex($key);
             $name = 'values[' . $key . ']';
             print '<fieldset style="margin:0 0 1rem;padding:1rem"><legend>' . self::esc($label[0]) . '</legend><label for="' . $id . '">' . self::esc($label[1]) . '</label><p><code>' . self::esc($key) . '</code> · ' . self::esc($this->text(array_key_exists($key, $local) ? 'local' : 'inherited')) . '</p>';
-            if (is_array($value)) {
+            if ($key === 'template') {
+                print '<select style="width:100%" id="' . $id . '" name="' . self::esc($name) . '">';
+                // Keep an unavailable current value visible without silently changing it.
+                if (!in_array($value, $templates, true)) print '<option selected value="' . self::esc($value) . '">' . self::esc($value . ' (' . $this->text('template_missing') . ')') . '</option>';
+                foreach ($templates as $template) {
+                    print '<option value="' . self::esc($template) . '"' . ($template === $value ? ' selected' : '') . '>' . self::esc($template) . '</option>';
+                }
+                print '</select>';
+            } elseif (is_array($value)) {
                 print '<textarea style="width:100%;box-sizing:border-box" rows="4" id="' . $id . '" name="' . self::esc($name) . '">' . self::esc(json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)) . '</textarea><p>' . self::esc($this->text('json')) . '</p>';
             } else {
                 $secret = self::secret($key);

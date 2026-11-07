@@ -5,6 +5,7 @@ if (!isset($GLOBALS['LANG']['site_settings']['fields'])) {
 }
 $GLOBALS['LANG']['site_settings'] = array_replace($GLOBALS['LANG']['site_settings'], [
     'title' => 'Installationsinställningar',
+    'template_missing' => 'saknas',
     'intro' => 'Inställningar från config.inc.php och localconfig.inc.php. Endast lokala värden sparas. Ändringar gäller från nästa sidladdning. Flaggor anges med 0 (av) eller 1 (på).',
     'denied' => 'Endast superanvändare får hantera installationsinställningar.',
     'saved' => 'Lokala inställningar sparade. Ladda om sidan för att använda dem.',
