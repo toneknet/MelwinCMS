@@ -1,4 +1,4 @@
-CREATE TABLE `hbook_options` (
+CREATE TABLE `m_options` (
   `id` int(11) NOT NULL auto_increment,
   `option_key` varchar(100) NULL default NULL,
   `option_value` text NULL,

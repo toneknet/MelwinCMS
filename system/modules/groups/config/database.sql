@@ -1,4 +1,4 @@
-CREATE TABLE `hbook_groups` (
+CREATE TABLE `m_groups` (
 `id` int(11) NOT NULL auto_increment,
 `namn` varchar(45) NULL default NULL,
 `description` text NULL,

@@ -58,7 +58,7 @@ installationsmotorn. Modulen deklarerar installationen i `config/install.json`:
 
 En SQL-fil innehåller ett CREATE TABLE- eller ALTER TABLE-kommando och börjar
 direkt med kommandot. `{{table}}` ersätts med den deklarerade tabellens namn via
-`db::o_prefix()`. Hårdkoda inte `m_` eller `hbook_`. Använd inte flera SQL-kommandon,
+`db::o_prefix()`. Hårdkoda inte `m_`. Använd inte flera SQL-kommandon,
 stored procedures, DELIMITER eller godtyckliga PHP-installationsskript.
 
 `columns` beskriver förväntade kolumntyper efter steget. Namn är skiftlägeskänsliga.

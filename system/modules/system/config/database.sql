@@ -1,4 +1,4 @@
-CREATE TABLE `hbook_categories` (
+CREATE TABLE `m_categories` (
 `id` int(11) NOT NULL auto_increment,
 `name` varchar(45) NULL default NULL,
 `groups` int(11) NULL default NULL,
@@ -8,7 +8,7 @@ CREATE TABLE `hbook_categories` (
 PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-CREATE TABLE `hbook_help` (
+CREATE TABLE `m_help` (
 `id` int(11) NOT NULL auto_increment,
 `type` varchar(45) NULL default NULL,
 `title` varchar(45) NULL default NULL,
@@ -17,7 +17,7 @@ PRIMARY KEY  (`id`),
 UNIQUE KEY `type` (`type`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-CREATE TABLE `hbook_page` (
+CREATE TABLE `m_page` (
 `id` int(11) NOT NULL auto_increment,
 `pid` int(11) NULL default '0',
 `src` varchar(45) NULL default NULL,
@@ -31,7 +31,7 @@ CREATE TABLE `hbook_page` (
 PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-CREATE TABLE `hbook_page_content` (
+CREATE TABLE `m_page_content` (
 `id` int(11) NOT NULL auto_increment,
 `pid` int(11) NULL default NULL,
 `target` varchar(45) NULL default NULL,
@@ -44,7 +44,7 @@ CREATE TABLE `hbook_page_content` (
 PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-CREATE TABLE `hbook_service` (
+CREATE TABLE `m_service` (
 `id` int(11) NOT NULL auto_increment,
 `atgard` text NULL,
 `regnr` int(11) NULL default NULL,
@@ -61,7 +61,7 @@ PRIMARY KEY  (`id`)
 
 
 
-/*CREATE TABLE `hbook_logs` (
+/*CREATE TABLE `m_logs` (
   `id` int(11) NOT NULL auto_increment,
   `datum` timestamp NOT NULL default 'current_timestamp()',
   `uid` int(5) NULL default '0',
@@ -73,7 +73,7 @@ PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;*/
 
 
-/*CREATE TABLE `hbook_logs` (
+/*CREATE TABLE `m_logs` (
   `id` int(11) NOT NULL auto_increment,
   `datum` timestamp default CURRENT_TIMESTAMP,
   `uid` int(5) NULL default '0',
@@ -84,7 +84,7 @@ PRIMARY KEY  (`id`)
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;*/
 
-/*CREATE TABLE `hbook_logs` (
+/*CREATE TABLE `m_logs` (
   `id` int(11) NOT NULL auto_increment,
   `datum` datetime DEFAULT current_timestamp(),
   `uid` int(5) DEFAULT 0,
@@ -99,7 +99,7 @@ PRIMARY KEY  (`id`)
 
 
 
-/*CREATE TABLE `hbook_user` (
+/*CREATE TABLE `m_user` (
 `id` int(11) NOT NULL auto_increment,
 `user` varchar(20) NOT NULL default '',
 `pass` varchar(20) NOT NULL default '',
@@ -124,7 +124,7 @@ PRIMARY KEY  (`id`)
 PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;*/
 
-CREATE TABLE `hbook_user` (
+CREATE TABLE `m_user` (
   `id` int(11) NOT NULL auto_increment,
   `user` varchar(20) NOT NULL default '',
   `pass` varchar(20) NOT NULL default '',
@@ -151,7 +151,7 @@ CREATE TABLE `hbook_user` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `hbook_vehicle` (
+CREATE TABLE `m_vehicle` (
 `id` int(11) NOT NULL auto_increment,
 `regnr` varchar(10) NOT NULL default '',
 `kategori` int(11) NULL default '0',
@@ -167,7 +167,7 @@ CREATE TABLE `hbook_vehicle` (
 PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-CREATE TABLE `hbook_options` (
+CREATE TABLE `m_options` (
 `id` int(11) NOT NULL auto_increment,
 `option_key` varchar(100) NULL default NULL,
 `option_value` text NULL,
@@ -177,7 +177,7 @@ CREATE TABLE `hbook_options` (
 PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;
 
-CREATE TABLE `hbook_ajax` (
+CREATE TABLE `m_ajax` (
   `id` int(11) NOT NULL auto_increment,
   `auth` int(11) NOT NULL default '1',
   `name` varchar(45) NOT NULL default '',

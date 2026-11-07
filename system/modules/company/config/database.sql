@@ -1,4 +1,4 @@
-/*CREATE TABLE `hbook_company` (
+/*CREATE TABLE `m_company` (
 `id` int(11) NOT NULL auto_increment,
 `namn` varchar(45) NULL default NULL,
 `ordning` int(2) NOT NULL default '99',
@@ -11,7 +11,7 @@ PRIMARY KEY  (`id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8;*/
 
 
-CREATE TABLE `hbook_company` (
+CREATE TABLE `m_company` (
   `id` int(11) NOT NULL auto_increment,
   `namn` varchar(45) NULL default NULL,
   `ordning` int(2) NOT NULL default '99',
