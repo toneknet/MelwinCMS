@@ -180,8 +180,8 @@ PRIMARY KEY  (`id`)
 CREATE TABLE `hbook_ajax` (
   `id` int(11) NOT NULL auto_increment,
   `auth` int(11) NOT NULL default '1',
-  `name` varchar(45) NOT NULL default NULL,
-  `script` varchar(200) NOT NULL default NULL,
+  `name` varchar(45) NOT NULL default '',
+  `script` varchar(200) NOT NULL default '',
   `ordning` int(2) NOT NULL default '99',
   `companyid` int(11) NULL default '0',
   `deleted` tinyint(1) NULL default '0',

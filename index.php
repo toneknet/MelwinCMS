@@ -26,7 +26,7 @@ define('PLUGINPATH', dirname(__FILE__) . "/resources/plugins/");
 include(SYSPATH . "configs/config.inc.php");
 if (!is_file(SYSPATH . "configs/localconfig.inc.php")) {
   // Install Mode
-  header("Location: /system/system/install.php");
+  header("Location: install.php");
   die();
 } else {
   include(SYSPATH . "configs/localconfig.inc.php");

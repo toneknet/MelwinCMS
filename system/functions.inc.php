@@ -57,7 +57,11 @@ spl_autoload_register(function ($class_name) {
 
 function scan($strPath)
 {
-  return (array) array_diff(scandir($strPath), array('..', '.'));
+  if (!is_dir($strPath) || !is_readable($strPath)) {
+    return [];
+  }
+  $entries = scandir($strPath);
+  return $entries === false ? [] : array_diff($entries, array('..', '.'));
 }
 
 function getModulePaths()

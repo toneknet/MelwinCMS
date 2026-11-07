@@ -52,7 +52,7 @@ class kernel
         // Kollar att db info är satt, annars ladda install istället.
         if ($GLOBALS['CONFIG']['dbUser'] == "" && $GLOBALS['CONFIG']['dbPass'] == "" && $GLOBALS['CONFIG']['dbName'] == "") {
           //print "INSTALL MODE";
-          include(SYSPATH."system/install.php");
+          include(ROOTPATH."install.php");
           die();
         }
 
