@@ -6,6 +6,7 @@ if (!isset($GLOBALS['LANG']['site_settings']['fields'])) {
 $GLOBALS['LANG']['site_settings'] = array_replace($GLOBALS['LANG']['site_settings'], [
     'title' => 'Installationsinställningar',
     'template_missing' => 'saknas',
+    'choose_timezone' => 'Välj en giltig tidszon',
     'intro' => 'Inställningar från config.inc.php och localconfig.inc.php. Endast lokala värden sparas. Ändringar gäller från nästa sidladdning. Flaggor anges med 0 (av) eller 1 (på).',
     'denied' => 'Endast superanvändare får hantera installationsinställningar.',
     'saved' => 'Lokala inställningar sparade. Ladda om sidan för att använda dem.',
@@ -24,7 +25,7 @@ $siteSettingsFields = [
 'www-root' => ['Webbplatsens adress', 'Basadress till installationen.'],
 'title' => ['Webbplatsens titel', 'Namnet som visas på webbplatsen.'],
 'language' => ['Språk', 'Språkkod, exempelvis sv eller en.'],
-'timezone' => ['Tidszon', 'PHP-tidszon, exempelvis Europe/Stockholm.'],
+'timezone' => ['Tidszon', 'Välj en tidszon från serverns lista, exempelvis Europe/Stockholm för Sverige. Sommartid hanteras automatiskt.'],
 'displayErrors' => ['Visa fel', 'Visa PHP-fel (0 eller 1). Kan visa känslig information.'],
 'displayDebug' => ['Felsökningsinformation', 'Aktivera felsökningsinformation (0 eller 1).'],
 'dbUser' => ['Databasanvändare', 'Användarnamn till databasen.'],

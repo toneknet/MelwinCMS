@@ -1,4 +1,5 @@
 <?php
+$GLOBALS['LANG']['site_settings']['choose_timezone'] = 'Choose a valid timezone';
 $GLOBALS['LANG']['site_settings']['template_missing'] = 'not available';
 $GLOBALS['LANG']['site_settings']['title'] = 'Site settings';
 $GLOBALS['LANG']['site_settings']['intro'] = 'Settings from config.inc.php and localconfig.inc.php. Only local overrides are saved. Changes apply on the next request. Flags use 0 (off) or 1 (on).';
@@ -18,7 +19,7 @@ $GLOBALS['LANG']['site_settings']['write_error'] = 'Could not save localconfig. 
 $GLOBALS['LANG']['site_settings']['fields']['www-root'] = ['Site URL', 'Base URL for this installation.'];
 $GLOBALS['LANG']['site_settings']['fields']['title'] = ['Site title', 'Name displayed by the site.'];
 $GLOBALS['LANG']['site_settings']['fields']['language'] = ['Language', 'Language code, such as en or sv.'];
-$GLOBALS['LANG']['site_settings']['fields']['timezone'] = ['Timezone', 'PHP timezone identifier, such as Europe/Stockholm.'];
+$GLOBALS['LANG']['site_settings']['fields']['timezone'] = ['Timezone', 'Choose a timezone from the server list, such as Europe/Stockholm for Sweden. Daylight saving time is handled automatically.'];
 $GLOBALS['LANG']['site_settings']['fields']['displayErrors'] = ['Display errors', 'Show PHP errors (0 or 1). May expose sensitive information.'];
 $GLOBALS['LANG']['site_settings']['fields']['displayDebug'] = ['Debug output', 'Enable debug output (0 or 1).'];
 $GLOBALS['LANG']['site_settings']['fields']['dbUser'] = ['Database user', 'Database login name.'];

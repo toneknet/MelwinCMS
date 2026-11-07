@@ -97,6 +97,7 @@ class site_settings
         $local = self::readFile($path);
         $effective = array_replace($defaults, $local);
         $templates = self::templates();
+        $timezones = timezone_identifiers_list();
         if (empty($_SESSION['site_settings_token'])) $_SESSION['site_settings_token'] = bin2hex(random_bytes(32));
         $message = '';
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['site_settings_save'])) {
@@ -114,7 +115,7 @@ class site_settings
                     catch (InvalidArgumentException $e) { throw new RuntimeException('invalid'); }
                     if ($key === 'template' && $value !== $sample && !in_array($value, $templates, true)) throw new RuntimeException('invalid');
                     if ((strpos($key, 'allow_') === 0 || in_array($key, ['displayErrors', 'displayDebug', 'noExecSql'], true)) && !in_array($value, [0, 1, '0', '1', false, true], true)) throw new RuntimeException('invalid');
-                    if ($key === 'timezone' && !in_array($value, timezone_identifiers_list(), true)) throw new RuntimeException('invalid');
+                    if ($key === 'timezone' && !in_array($value, $timezones, true)) throw new RuntimeException('invalid');
                     // Do not freeze inherited defaults into the local file.
                     if ($value !== $sample) $next[$key] = $value;
                 }
@@ -133,7 +134,14 @@ class site_settings
             $id = 'site-setting-' . bin2hex($key);
             $name = 'values[' . $key . ']';
             print '<fieldset style="margin:0 0 1rem;padding:1rem"><legend>' . self::esc($label[0]) . '</legend><label for="' . $id . '">' . self::esc($label[1]) . '</label><p><code>' . self::esc($key) . '</code> · ' . self::esc($this->text(array_key_exists($key, $local) ? 'local' : 'inherited')) . '</p>';
-            if ($key === 'template') {
+            if ($key === 'timezone') {
+                print '<select style="width:100%" id="' . $id . '" name="' . self::esc($name) . '" required>';
+                if (!in_array($value, $timezones, true)) print '<option value="" selected disabled>' . self::esc($this->text('choose_timezone')) . '</option>';
+                foreach ($timezones as $timezone) {
+                    print '<option value="' . self::esc($timezone) . '"' . ($timezone === $value ? ' selected' : '') . '>' . self::esc($timezone) . '</option>';
+                }
+                print '</select>';
+            } elseif ($key === 'template') {
                 print '<select style="width:100%" id="' . $id . '" name="' . self::esc($name) . '">';
                 // Keep an unavailable current value visible without silently changing it.
                 if (!in_array($value, $templates, true)) print '<option selected value="' . self::esc($value) . '">' . self::esc($value . ' (' . $this->text('template_missing') . ')') . '</option>';
