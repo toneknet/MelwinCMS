@@ -162,6 +162,14 @@ class system_update_tool
     }
     function errMsg(res) { return SUT_L.error + ' ' + (res && res.error ? res.error : SUT_L.unknown); }
 
+    function checkFailure(xhr, status) {
+        var detail = 'HTTP ' + xhr.status + (status ? ' / ' + status : '');
+        if (xhr.responseJSON && typeof xhr.responseJSON.error === 'string') {
+            detail += ': ' + xhr.responseJSON.error;
+        }
+        return escHtml(SUT_L.ajax_err_check + ' (' + detail + ')');
+    }
+
     function databaseBackups(res) {
         return Object.keys(res.database_backups || {}).map(function(slug){
             return '<br><strong>' + SUT_L.backup_label + ' (' + escHtml(slug) + ')</strong> <code>' + escHtml(res.database_backups[slug]) + '</code>';
@@ -260,7 +268,7 @@ class system_update_tool
             done(type, '<strong>' + SUT_L.differences + '</strong> ' + res.mismatch_count);
             renderDiff(type, res);
             setInstallEnabled(type, res.needs_update === true);
-        }).fail(function(){ msg(type, SUT_L.ajax_err_check, 100, true); });
+        }).fail(function(xhr, status){ msg(type, checkFailure(xhr, status), 100, true); });
     }
 
     function doBackup(type) {
@@ -357,7 +365,7 @@ class system_update_tool
             msg('addons', total + ' ' + SUT_L.addon_modules_found, 100, true);
             renderAddonList(res);
             setAddonUpdateAllEnabled((res.total_updates || 0) > 0);
-        }).fail(function(){ msg('addons', SUT_L.ajax_err_check, 100, true); });
+        }).fail(function(xhr, status){ msg('addons', checkFailure(xhr, status), 100, true); });
     }
 
     function renderModuleRows(modules) {

@@ -88,6 +88,7 @@ $(document).ready(function() {
 
 
 $(document).ready(function() {
+	if (typeof $.fn.fancybox !== 'function') return;
 	$(".various").fancybox({
 		maxWidth	: 800,
 		maxHeight	: 600,

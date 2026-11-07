@@ -1,4 +1,8 @@
 <?php
+// AJAX loads the selected language directly, without the router's English fallback.
+if (!isset($GLOBALS['LANG']['site_settings']['fields'])) {
+    require __DIR__ . '/en.php';
+}
 $GLOBALS['LANG']['site_settings'] = array_replace($GLOBALS['LANG']['site_settings'], [
     'title' => 'Installationsinställningar',
     'intro' => 'Inställningar från config.inc.php och localconfig.inc.php. Endast lokala värden sparas. Ändringar gäller från nästa sidladdning. Flaggor anges med 0 (av) eller 1 (på).',
