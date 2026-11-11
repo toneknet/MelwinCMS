@@ -184,6 +184,11 @@ class tbl_user
 		$dca['bolFailed'] = false;
 		// Pass for new user
 		$strNewUserPWD = "start";
+		// No checked boxes means no POST field. Clear groups only when the form edits them.
+		$palette = explode(',', $dca['form']['palette']);
+		if (in_array('groups', $palette, true) && !isset($dca['db_groups'])) {
+			$dca['db_groups'] = array();
+		}
 		/**
 		 *  Ny användare
 		 * --------------
@@ -203,6 +208,17 @@ class tbl_user
 
 		// Kolla om ny så lägg till start som epost samt skicka denne ett mail!
 		if ($dca['db_id'] == "") {
+			// An unchecked group list is absent from POST. The groups column is NOT NULL.
+			// New users also need a value when groups are absent from the form.
+			if (!isset($dca['db_groups'])) {
+				$dca['db_groups'] = array();
+			}
+			if (!in_array('groups', $palette, true)) {
+				$dca['form']['palette'] .= ',groups';
+			}
+			if (!isset($dca['db_grupp']) || $dca['db_grupp'] === '') {
+				$dca['db_grupp'] = 0;
+			}
 			// Finns användare redan??
 			$arrUser = $db->o_get_all('user', "SELECT * FROM [table] WHERE user='" . $dca['db_user'] . "' AND deleted=0 AND companyid=" . getCompanyID());
 			if (count($arrUser) > 0) {

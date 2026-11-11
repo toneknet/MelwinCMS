@@ -144,6 +144,7 @@ CREATE TABLE `m_user` (
   `email` varchar(50) NULL default '',
   `companyid` int(11) NULL default '0',
   `lostpassword` varchar(150) NULL default '',
+  `lostpasswordTime` datetime NULL default NULL,
   `changepwdnextlogin` tinyint(1) NULL default '0',
   `sendemail` tinyint(1) NULL default '0',
   `drivercard` varchar(20) NULL default NULL,

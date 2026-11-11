@@ -246,8 +246,20 @@ class login
         $strMsg = sprintf($GLOBALS['LANG']['login']['email_retrive'], $tmpUrl, $tmpUrl);
         // Byter ut sendmail till nya här!
         // sendMail($arrUser['email'], $GLOBALS['LANG']['login']['email_retrive_subject'], $strMsg);
-        $mail = new mail();
-        $mail->send(array($arrUser['email']), $GLOBALS['LANG']['login']['email_retrive_subject'], nl2br($strMsg));
+        try {
+          $mail = new mail();
+          $mail->addAddresses($arrUser['email']);
+          $mail->Subject = $GLOBALS['LANG']['login']['email_retrive_subject'];
+          $mail->msgHTML(nl2br($strMsg));
+          if (!$mail->GO()) {
+            $this->frmMsg .= "<p class='frmError'>" . $GLOBALS['LANG']['GENERAL']['error'] . "</p>";
+            return;
+          }
+        } catch (\Throwable $e) {
+          error_log('Password recovery: mail delivery failed (' . get_class($e) . '). Check PHPMailer installation and SMTP configuration.');
+          $this->frmMsg .= "<p class='frmError'>" . $GLOBALS['LANG']['GENERAL']['error'] . "</p>";
+          return;
+        }
         $this->frmMsg .= "<p class='frmSuccess'>" . $GLOBALS['LANG']['login']['lostpassword_success'] . "</p>";
       } else {
         $this->frmMsg .= "<p class='frmSuccess'>" . $GLOBALS['LANG']['login']['lostpassword_success'] . "</p>";
@@ -267,10 +279,9 @@ class login
     $code = $g['code'];
     if ($this->is_code_valid($code)) {
       $db = db::getInstance();
-      $arrAnswer = $db->o_get_row('user', "SELECT id,email FROM [table] WHERE lostpassword = '{$code}' AND lostpasswordTime >= DATE(NOW() - INTERVAL 1 HOUR) AND deleted=0");
+      $arrAnswer = $db->o_get_row('user', "SELECT id,email FROM [table] WHERE lostpassword = '{$code}' AND lostpasswordTime >= (NOW() - INTERVAL 1 HOUR) AND deleted=0");
       if (is_array($arrAnswer) && count($arrAnswer) >= 1) {
-        // Remove code for one time use only!
-        $db->o_update('user', array('lostpassword' => '', 'lostpasswordTime' => NULL), 'id=' . $arrAnswer['id']);
+        // Consume the code only when the new password is saved successfully.
         $this->code = $code;
         // Check for SUBMIT AND if email is correct
         if (isset($p['email']) && isset($p['password1']) && isset($p['password2']) && $p['email'] == $arrAnswer['email']) {

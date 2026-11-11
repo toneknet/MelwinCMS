@@ -49,10 +49,31 @@ class system_update_tool
     {
         print '<h2>' . $this->l('title') . '</h2>';
         $this->render_core_section();
+        $this->render_dependencies_section();
         $this->render_addons_section();
         $this->render_local_section();
         $this->render_js_lang();
         $this->render_js();
+    }
+
+    private function render_dependencies_section(): void
+    {
+        if (!isSuperUser()) return;
+        require_once dirname(__DIR__, 2) . '/libs/dependencies.cls.php';
+        if (empty($_SESSION['melwin_dependency_token'])) $_SESSION['melwin_dependency_token'] = bin2hex(random_bytes(32));
+        $manager = new dependencies();
+        if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && ($_POST['dependency_action'] ?? '') === 'install_dependency') {
+            try {
+                if (!hash_equals($_SESSION['melwin_dependency_token'], (string)($_POST['dependency_token'] ?? ''))) {
+                    throw new RuntimeException('Ogiltig begäran. Ladda om sidan och försök igen.');
+                }
+                $manager->install((string)($_POST['dependency'] ?? ''));
+                echo '<p role="status">Beroendet har hämtats och installerats.</p>';
+            } catch (Throwable $e) {
+                echo '<p role="alert">' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
+            }
+        }
+        $manager->render($_SESSION['melwin_dependency_token'], 'dependency_action', 'dependency_token');
     }
 
     private function render_core_section(): void

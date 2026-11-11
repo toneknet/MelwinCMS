@@ -800,8 +800,8 @@ class db
 
     /**
      * Fixar rätt typ av prefix till rätt tabell..
-     * @param type $strTable
-     * @return type
+     * @param string $strTable
+     * @return string
      */
     function o_prefix($strTable)
     {

@@ -1,0 +1,24 @@
+{
+    "require": { "phpmailer": "7.0.0" },
+    "packages": {
+        "phpmailer": {
+            "name": "PHPMailer",
+            "composer": "phpmailer/phpmailer",
+            "source": "https://github.com/PHPMailer/PHPMailer",
+            "releases": {
+                "7.2.0": {
+                    "php": "7.4.0",
+                    "extensions": ["ctype", "filter", "hash", "openssl"],
+                    "require": {},
+                    "base": "https://raw.githubusercontent.com/PHPMailer/PHPMailer/f5eb50148734d03bbbb81825c722c1889636d51a/",
+                    "files": {
+                        "src/Exception.php": "22ab858ae438d98f58f41f38ad2191d1b0d59570aebea0463a7948cfae1021b7",
+                        "src/PHPMailer.php": "007a9d0e5445162c4ae15374605c8287f129432bdb545322d7075ef81c4660d4",
+                        "src/SMTP.php": "4d46dda61291216905257a63086842a41c39c958828417820c42baf8219c1240",
+                        "LICENSE": "a1a33180d02960ab1c5de36cf20b1a2f0fe9888d83826ad263da5db52f1b183b"
+                    }
+                }
+            }
+        }
+    }
+}

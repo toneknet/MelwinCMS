@@ -52,10 +52,16 @@ Type: Library
  require_once PLUGINPATH . 'PHPMailer/src/SMTP.php';*/
 
 
-$mailPath = str_replace("plugins/", "phpmailer", PLUGINPATH);
-// print $mailPath;
-
-require_once "{$mailPath}/vendor/autoload.php";
+$mailPluginPath = rtrim(PLUGINPATH, '/\\');
+if (is_file($mailPluginPath . '/phpmailer/src/PHPMailer.php')) {
+  require_once $mailPluginPath . '/phpmailer/src/Exception.php';
+  require_once $mailPluginPath . '/phpmailer/src/PHPMailer.php';
+  require_once $mailPluginPath . '/phpmailer/src/SMTP.php';
+} elseif (is_file($mailPluginPath . '/vendor/autoload.php')) {
+  require_once $mailPluginPath . '/vendor/autoload.php';
+} else {
+  throw new \RuntimeException('PHPMailer saknas. Öppna Beroenden i installations- eller uppdateringsverktyget och välj Hämta och installera.');
+}
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -99,7 +105,11 @@ class mail extends PHPMailer
   {
     if (is_array($emailTo)) {
       foreach ($emailTo as $key => $value) {
-        $this->AddAddress($key, $value);
+        if (is_int($key)) {
+          $this->AddAddress($value);
+        } else {
+          $this->AddAddress($key, $value);
+        }
       }
     } elseif (str_contains($emailTo, ";")) {
       foreach (explode(";", $emailTo) as $value) {
@@ -116,17 +126,25 @@ class mail extends PHPMailer
       //Server settings
       //$this->SMTPDebug = SMTP::DEBUG_SERVER;                      // Enable verbose debug output
       $this->isSMTP();                                            // Send using SMTP
-      $this->Host       = $GLOBALS['CONFIG']['SMTP-server'];                    // Set the SMTP server to send through
-      $this->SMTPAuth   = true;                                   // Enable SMTP authentication
-      $this->Username   = $GLOBALS['CONFIG']['SMTP-username'];                     // SMTP username
-      $this->Password   = $GLOBALS['CONFIG']['SMTP-password'];                               // SMTP password
-      $this->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;         // Enable TLS encryption; `PHPMailer::ENCRYPTION_SMTPS` also accepted
-      $this->Port       = $GLOBALS['CONFIG']['SMTP-port'];                                    // TCP port to connect to
+      $config = $GLOBALS['CONFIG'];
+      // Prefer settings managed by site_settings; retain legacy installations.
+      $this->Host = ($config['smtp_host'] ?? '') ?: ($config['SMTP-server'] ?? '');
+      $this->Username = ($config['smtp_user'] ?? '') ?: ($config['SMTP-username'] ?? '');
+      $this->Password = ($config['smtp_pass'] ?? '') ?: ($config['SMTP-password'] ?? '');
+      $this->SMTPAuth = $this->Username !== '';
+      $encryption = $config['smtp_encrypt'] ?? 'STARTTLS';
+      $this->SMTPSecure = ['' => '', 'SSL' => PHPMailer::ENCRYPTION_SMTPS, 'STARTTLS' => PHPMailer::ENCRYPTION_STARTTLS][strtoupper($encryption)] ?? $encryption;
+      $this->Port = (int)(($config['smtp_port'] ?? '') ?: ($config['SMTP-port'] ?? 587));
       //Recipients
-      $this->setFrom($GLOBALS['CONFIG']['SMTP-from'], $GLOBALS['CONFIG']['SMTP-from-name']);
-      if (isset($GLOBALS['CONFIG']['SMTP-BCC']) && is_array($GLOBALS['CONFIG']['SMTP-BCC'] ) && count($GLOBALS['CONFIG']['SMTP-BCC'] ) >=1) {
-        foreach ($GLOBALS['CONFIG']['SMTP-BCC'] as $adress => $name) {
-          $this->addBCC($adress, $name);
+      $this->setFrom(($config['smtp_mail'] ?? '') ?: ($config['SMTP-from'] ?? ''), ($config['smtp_from_name'] ?? '') ?: ($config['SMTP-from-name'] ?? ''));
+      $bcc = !empty($config['smtp_BCC']) ? $config['smtp_BCC'] : ($config['SMTP-BCC'] ?? []);
+      if (is_array($bcc)) {
+        foreach ($bcc as $adress => $name) {
+          if (is_int($adress)) {
+            $this->addBCC($name);
+          } else {
+            $this->addBCC($adress, $name);
+          }
         }
         // $this->addBCC('admin@hallens.se', 'Martin Tonek');
       }
@@ -143,17 +161,20 @@ class mail extends PHPMailer
       }
 
 
-      $this->send();
+      if (!$this->send()) {
+        error_log('Mail delivery failed: ' . $this->ErrorInfo);
+        return false;
+      }
       add2cronlog('Message for module ' . $this->module . ' has been sent');
       return true;
     } catch (Exception $e) {
-      add2cronlog("Message for module " . $this->module . " could not be sent. Mailer Error: {$this->ErrorInfo}");
+      error_log("Message for module " . $this->module . " could not be sent. Mailer Error: {$this->ErrorInfo}");
       return false;
     }
   }
 
   public function sendmail() {
-    $this->GO();
+    return $this->GO();
   }
 
   // /**

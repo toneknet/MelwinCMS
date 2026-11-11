@@ -100,6 +100,36 @@ class site_settings
         $timezones = timezone_identifiers_list();
         if (empty($_SESSION['site_settings_token'])) $_SESSION['site_settings_token'] = bin2hex(random_bytes(32));
         $message = '';
+        $recipient = '';
+        if (function_exists('getUserID')) {
+            $user = db::getInstance()->o_get_row('user', 'SELECT email FROM [table] WHERE id=' . (int)getUserID());
+            $recipient = $user['email'] ?? '';
+        }
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['site_settings_test_mail'])) {
+            if (!is_string($_POST['site_settings_token'] ?? null) || !hash_equals($_SESSION['site_settings_token'], $_POST['site_settings_token'])) {
+                $message = 'csrf';
+            } elseif (!is_string($_POST['test_mail_recipient'] ?? null) || !filter_var(trim($_POST['test_mail_recipient']), FILTER_VALIDATE_EMAIL)) {
+                $message = 'test_mail_invalid';
+            } else {
+                $recipient = trim($_POST['test_mail_recipient']);
+                $previous = $GLOBALS['CONFIG'];
+                try {
+                    // Use saved installation settings, including immediately after saving.
+                    $GLOBALS['CONFIG'] = array_replace($previous, $effective);
+                    $mail = new mail();
+                    $mail->module = 'site_settings';
+                    $mail->Timeout = 15;
+                    $mail->addAddresses($recipient);
+                    $mail->Subject = $this->text('test_mail_subject');
+                    $mail->msgHTML('<p>' . self::esc($this->text('test_mail_body')) . '</p>');
+                    $message = $mail->GO() ? 'test_mail_sent' : 'test_mail_failed';
+                } catch (\Throwable $e) {
+                    $message = 'test_mail_failed';
+                } finally {
+                    $GLOBALS['CONFIG'] = $previous;
+                }
+            }
+        }
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['site_settings_save'])) {
             try {
                 if (!is_string($_POST['site_settings_token'] ?? null) || !hash_equals($_SESSION['site_settings_token'], $_POST['site_settings_token'])) throw new RuntimeException('csrf');
@@ -159,7 +189,9 @@ class site_settings
             if (array_key_exists($key, $defaults)) print '<p><label><input type="checkbox" name="reset[' . self::esc($key) . ']" value="1"> ' . self::esc($this->text('reset')) . '</label></p>';
             print '</fieldset>';
         }
-        print '<button type="submit">' . self::esc($this->text('save')) . '</button></form></section>';
+        print '<button type="submit">' . self::esc($this->text('save')) . '</button></form>';
+        print '<form method="post"><fieldset style="margin:1rem 0;padding:1rem"><legend>' . self::esc($this->text('test_mail_title')) . '</legend><p>' . self::esc($this->text('test_mail_intro')) . '</p>';
+        print '<input type="hidden" name="site_settings_token" value="' . self::esc($_SESSION['site_settings_token']) . '"><label for="test-mail-recipient">' . self::esc($this->text('test_mail_recipient')) . '</label> <input type="email" id="test-mail-recipient" name="test_mail_recipient" required value="' . self::esc($recipient) . '"> <button type="submit" name="site_settings_test_mail" value="1">' . self::esc($this->text('test_mail_send')) . '</button></fieldset></form></section>';
     }
 
     private static function secret($key) { return in_array($key, ['dbPass', 'smtp_pass', 'ftp_pass', 'salt', 'install_password', 'repoUrlAuth'], true) || (bool)preg_match('/(?:password|secret|token)$|_pass$/i', $key) && strpos($key, 'allow_') !== 0; }

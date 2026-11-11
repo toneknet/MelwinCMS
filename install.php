@@ -53,7 +53,17 @@ class MelwinInstaller
         }
 
         if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
-            $this->handleInstall();
+            if (($_POST['install_action'] ?? '') === 'install_dependency') {
+                try {
+                    if (!$this->checkToken((string)($_POST['csrf'] ?? ''))) throw new RuntimeException('Sessionen har gått ut. Ladda om sidan.');
+                    $this->dependencies()->install((string)($_POST['dependency'] ?? ''));
+                    $this->messages[] = 'Beroendet har hämtats och installerats.';
+                } catch (Throwable $e) {
+                    $this->errors[] = $e->getMessage();
+                }
+            } else {
+                $this->handleInstall();
+            }
         }
 
         $this->render();
@@ -62,6 +72,12 @@ class MelwinInstaller
     private function coreAvailable(): bool
     {
         return is_file(SYSPATH . 'configs/config.inc.php') && is_dir(MODPATH);
+    }
+
+    private function dependencies(): dependencies
+    {
+        require_once SYSPATH . 'libs/dependencies.cls.php';
+        return new dependencies();
     }
 
     private function handleCoreDownload(): void
@@ -660,6 +676,7 @@ class MelwinInstaller
             return;
         }
 
+        $this->dependencies()->render($this->token(), 'install_action', 'csrf');
         $this->renderForm();
         echo '</main>';
         $this->pageEnd();

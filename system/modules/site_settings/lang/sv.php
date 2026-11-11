@@ -70,3 +70,12 @@ $siteSettingsFields = [
 ];
 $GLOBALS['LANG']['site_settings']['fields'] = array_replace($GLOBALS['LANG']['site_settings']['fields'], $siteSettingsFields);
 unset($siteSettingsFields);
+$GLOBALS['LANG']['site_settings']['test_mail_title'] = 'Testa e-post';
+$GLOBALS['LANG']['site_settings']['test_mail_intro'] = 'Spara e-postinställningarna först. Testet använder sparade inställningar, inte osparade ändringar. Din användares e-postadress är förifylld om den finns.';
+$GLOBALS['LANG']['site_settings']['test_mail_recipient'] = 'Mottagare';
+$GLOBALS['LANG']['site_settings']['test_mail_send'] = 'Skicka testmejl';
+$GLOBALS['LANG']['site_settings']['test_mail_invalid'] = 'Ange en giltig e-postadress till mottagaren.';
+$GLOBALS['LANG']['site_settings']['test_mail_sent'] = 'Mejlservern tog emot testmejlet. Kontrollera mottagarens inkorg och skräppost.';
+$GLOBALS['LANG']['site_settings']['test_mail_failed'] = 'Kunde inte skicka testmejlet. Kontrollera sparade e-postinställningar och att PHPMailer är installerat.';
+$GLOBALS['LANG']['site_settings']['test_mail_subject'] = 'Testmejl från MelwinCMS';
+$GLOBALS['LANG']['site_settings']['test_mail_body'] = 'Detta testmejl skickades med de sparade e-postinställningarna i MelwinCMS.';
