@@ -24,7 +24,21 @@
  * THE SOFTWARE.
  */
 
-require_once str_replace("plugins/", "mpdf", PLUGINPATH) . '/vendor/autoload.php';
+$pdfPluginPath = rtrim(PLUGINPATH, '/\\');
+if (!class_exists(\Mpdf\Mpdf::class)) {
+  if (is_file($pdfPluginPath . '/mpdf/src/Mpdf.php')) {
+    require_once __DIR__ . '/dependencies.cls.php';
+    (new dependencies($pdfPluginPath))->load('mpdf');
+  } else {
+    foreach ([$pdfPluginPath . '/vendor/autoload.php', dirname($pdfPluginPath) . '/mpdf/vendor/autoload.php'] as $pdfAutoload) {
+      if (is_file($pdfAutoload)) require_once $pdfAutoload;
+      if (class_exists(\Mpdf\Mpdf::class)) break;
+    }
+  }
+}
+if (!class_exists(\Mpdf\Mpdf::class)) {
+  throw new \RuntimeException('mPDF saknas. Öppna Beroenden i installations- eller uppdateringsverktyget och välj Hämta och installera.');
+}
 /**
  * Description of pdf
  * A wrapper for mpdf with added functionallity for footer and stylesheet
