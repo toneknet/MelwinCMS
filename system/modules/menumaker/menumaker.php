@@ -86,6 +86,10 @@ class menumaker {
               if ($input->post('hash')== salt( $table . date("Y-m-d") . $input->post('db_id') ) ) {
                   $formcatcher = new formcatcher();
                   $formcatcher->catchform($this->dbFormSettings);
+                  if ($formcatcher->success && $input->post('save_and_manage_modules') === '1') {
+                      header('Location: ?action=module&id=' . (int) $formcatcher->id, true, 303);
+                      return;
+                  }
               } else {
                   setMsg('e', "ERROR: In catching form (Have you remembered to activate 'id' as a field in 'listandedit'?");
               }
@@ -97,6 +101,7 @@ class menumaker {
               if ($intId>0) {
                   $form->loadData($this->dbFormSettings, $intId);
               } elseif ($strAction === 'add') {
+                  $this->dbFormSettings['form']['submit_buttons']['save_and_manage_modules'] = 'Spara och gå till modul';
                   // Preserve the position chosen with "after" or "into" when adding a page.
                   if ($input->get('after') !== '' && intval($input->get('after')) > 0) {
                       $after = $db->o_get_row('page', 'SELECT * FROM [table] WHERE deleted=0 AND id=' . intval($input->get('after')));

@@ -151,6 +151,9 @@ class auth
 
         // Kollar om person inloggad!
         if ($this->validate()) {
+            // Resolve the active company before callers can access private tables.
+            // AJAX handlers may never call getCompanyID() or render the userbar.
+            $this->getUserAndCompany();
             // $this->log();
             $this->checkPasswordChange();
             return 1;
@@ -159,6 +162,7 @@ class auth
         // Kollar om inloggningsformuläret skickats
         if ($input->get('action') == 'login' && $input->post('username') != "" && $input->post('password') != "") {
             if ($this->checkLogin($input->post('username'), $input->post('password'))) {
+                $this->getUserAndCompany();
                 $this->checkPasswordChange();
                 // 2026-04-24 : Fixar så att man hamnar på startsidan efter inloggning
                 header('Location: '. getURL([],true));

@@ -206,7 +206,7 @@ class db
     private $arrFreeTables = array('company', 'page', 'page_content');
     private $intCompanyId; // CompanyID
 
-
+    public $debug = false;
 
 
 
@@ -274,9 +274,46 @@ class db
                 $arrReturn[$arrDBAnswer[$key]] = $arrDBAnswer;
             }
             mysqli_free_result($query);
-            if ($showDebug) pre($arrReturn);
+            if ($showDebug || $this->debug) pre($arrReturn);
             return (array) $arrReturn;
         }
+    }
+
+
+
+
+
+	// CHECK FOR NEED
+    function o_get_foreignKey($strTable, $field)
+    {
+        return $this->o_get_options($strTable, "SELECT id,{$field} FROM [table]");
+    }
+
+
+    /**
+     * Alias for o get all but returns id as key and the other field as value
+     * Require that you set id as first in 'SELECT id,(other field)'
+     *
+     * @param [type] $strTable
+     * @param [type] $query
+     * @param string $key
+     * @param boolean $showDebug
+     * @return void
+     */
+    function o_get_options($strTable, $query, $key = 'id', $showDebug = false)
+    {
+        $arrAnswer = $this->o_get_all($strTable, $query, $key, $showDebug);
+        if (is_array($arrAnswer)) {
+            $tmp = array_shift(array_values($arrAnswer));
+            $value = array_key_last($tmp);
+            foreach ($arrAnswer as $k => $v) {
+                $arrTmp[$k] = $v[$value];
+            }
+        } else {
+            $arrTmp = $arrAnswer;
+        }
+        // pre($arrAnswer);
+        return $arrTmp;
     }
 
     /**
@@ -616,7 +653,7 @@ class db
         }
 
         $GLOBALS['DEBUG'][] = "DB :: " . __FUNCTION__ . " :: " . $strTable . " :: " . $sql;
-        if ($showDebug) pre($sql);
+        if ($showDebug || $this->debug) pre($sql);
         // pre($sql);
         // Genomför fråga
         $query = mysqli_query($this->link, $sql);
@@ -640,7 +677,7 @@ class db
      * @param array $intForceNoPrefix Om du vill göra en insert utan prefix!
      * @return boolean 1=Genomfört , 0=misslyckat
      */
-    function o_insert($strTable, $arrVariables = array(), $intForceNoPrefix = false)
+    function o_insert($strTable, $arrVariables = array(), $intForceNoPrefix = false, $showDebug = false)
     {
 
         // VIKTIGT: Bygga INTE in en funktion för companyID här med
@@ -690,7 +727,7 @@ class db
         //        $sql.= ", `companyid` = '". getCompanyID() . "'";
 
         $GLOBALS['DEBUG'][] = "DB :: " . __FUNCTION__ . " :: " . $strTable . " :: " . $sql;
-
+        if ($showDebug) pre($sql);
         // Under development i dont execute all sql inserts
         //$query = mysqli_query( $this->link, $sql );
         // pre($sql);
@@ -719,6 +756,40 @@ class db
     }
 
     /**
+     * Checks if a value with all fields already exists, then return false, else pass trough to o_insert
+     *
+     * @param [type] $strTable
+     * @param array $arrVariables
+     * @param boolean $intForceNoPrefix
+     * @param boolean $showDebug
+     * @return void
+     */
+    function o_insert_unique($strTable, $arrVariables = array(), $intForceNoPrefix = false, $showDebug = false)
+    {
+        if (!$intForceNoPrefix) {
+            $strTable = $this->o_prefix($strTable);
+        }
+        // Check if exist
+        $sql = "SELECT * FROM {$strTable} WHERE ";
+        // Add variables
+        foreach ($arrVariables as $f => $v) {
+            $sql .= "{$f} = '{$v}' AND ";
+        }
+        $sql .= "deleted=0";
+        if ($showDebug) pre($sql);
+        $arrAnswer = $this->o_get_all('', $sql);
+        if (count($arrAnswer) > 0) {
+            print "Exist";
+            return false;
+        } else {
+            print "Insert";
+            return $this->o_insert($strTable, $arrVariables, true, $showDebug);
+        }
+    }
+
+
+
+    /**
      * Makes it possible to force prefix
      * @param  [string] $strPrefix               [description]
      */
@@ -734,6 +805,8 @@ class db
      */
     function o_prefix($strTable)
     {
+        $GLOBALS['DEBUG'][] = "DB :: " . __FUNCTION__ . " :: " . '' . " :: " . $strTable;
+
         /**
          * Jag har en bugg här när användaren inte har fått en auth. Då får jag felaktiga tabeller 
          * som i sin tur genererar ett fel.
@@ -812,8 +885,8 @@ class db
      * @param string $strWhere Här anges eventuell WHERE sats
      * @return boolean 1=Genomfört , 0=misslyckat
      */
-    function o_update($strTable, $arrVariables = array(), $strWhere = "")
-    {
+    function o_update($strTable, $arrVariables = array(), $strWhere = "") {
+    
 
 
         // Kolla först om tabellen är en av de utvalda
@@ -919,6 +992,12 @@ class db
         file_put_contents($dir . "/db_" . date("Ymd") . ".log", $msg, FILE_APPEND);
     }
 
+	private function log_db_debug($function = '', $query = '')
+    {
+        $msg = "[" . date("Y-m-d h:i:s") . "] [{$function}] $query\n";
+        $dir = str_replace("libs", "logs", __DIR__);
+        file_put_contents($dir . "/db_debug_" . date("Ymd") . ".log", $msg, FILE_APPEND);
+    }
 
     /**
      * Allow the class to send admins a message alerting them to errors
@@ -928,8 +1007,8 @@ class db
     {
 
         $trace = generateCallTrace();
-
-        setMsg("e", "<b>Databas fel!</b><br /> Det du försökt göra har inte gått att genomföra. Kontakta ansvarig snarast för att undersöka felet.");
+        
+        setMsg("e", "<b>" . $GLOBALS['LANG']['DB']['log_error'][0] . "</b><br />" . $GLOBALS['LANG']['DB']['log_error'][1]);
         error_log("[$severity] [$function] [$error]  [$query] [$trace]");
         error_log("[" . date("d-M-Y h:i:s") . "] [$severity] [$function]\n[$error]\n[$query]\n[$trace]\n[$this->sqlquery]\n", 3, SYSPATH . "/logs/db.log");
         //[07-Apr-2019 23:19:57
@@ -937,36 +1016,7 @@ class db
         $GLOBALS['DEBUG'][] = __CLASS__ . " :: " . __FUNCTION__ . " :: " . $query;
         $GLOBALS['DEBUG'][] = __CLASS__ . " :: " . __FUNCTION__ . " :: " . $severity;
 
-        if (getUserID() == 1) {
-            setMsg("e", "<b>Felmeddelande:</b><br /> <pre>[$severity] [$function]\n[$error]\n[$query]\n[$trace]\n[$this->sqlquery]</pre>");
-        } else {
-            if (sendMail("admin@hallens.se", "Databas fel", "[" . date("d-M-Y h:m:s") . "] [$severity] [$function]\n[$error]\n[$query]\n[$trace]\n[$this->sqlquery]")) {
-                error_log("DB ERROR: Mail sent");
-            } else {
-                error_log("DB ERROR: Mail NOT sent");
-            }
-        }
-
-
-
-        //        $headers  = 'MIME-Version: 1.0' . "\r\n";
-        //        $headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
-        //        $headers .= 'To: Admin <'.SEND_ERRORS_TO.'>' . "\r\n";
-        //        $headers .= 'From: Yoursite <system@your-site.com>' . "\r\n";
-        //
-        //        $message = '<p>An error has occurred:</p>';
-        //
-        //        $message .= '<p>Error at '. date('Y-m-d H:i:s').': ';
-        //        $message .= 'Query: '. htmlentities( $query ).'<br />';
-        //        $message .= '</p>';
-        //        $message .= '<p>Severity: '. $severity .'</p>';
-        //
-        ////        mail( SEND_ERRORS_TO, 'Database Error', $message, $headers);
-        //
-        //        if( DISPLAY_DEBUG )
-        //        {
-        //            echo $message;
-        //        }
+        // setMsg("e", "<b>Felmeddelande:</b><br /> <pre>[$severity] [$function]\n[$error]\n[$query]\n[$trace]\n[$this->sqlquery]</pre>");
     }
 
 

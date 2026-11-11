@@ -78,13 +78,11 @@ class input
             // get prefix
             $pfx = 'db_';
             foreach ($p as $key => $value) {
-                unset($p[$key]);
                 if (str_starts_with($key,$pfx)){
+                    unset($p[$key]);
                     $nkey = substr($key, strlen($pfx));
-                } else {
-                    $nkey = $key;
+                    $p[$nkey] = $value;
                 }
-                $p[$nkey] = $value;
             }
         }
         return (array) $p;

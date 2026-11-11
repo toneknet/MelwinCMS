@@ -793,6 +793,13 @@ class form
 
         // Om man vill ange egen caption då?
         $output .=  ($notCompleteForm) ? "" : "<input type=\"submit\" value=\"{$caption}\">\n";
+        if (!$notCompleteForm) {
+            foreach ($dbFormSettings['form']['submit_buttons'] ?? [] as $name => $label) {
+                $name = htmlspecialchars($name, ENT_QUOTES, 'UTF-8');
+                $label = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+                $output .= "<button type=\"submit\" name=\"{$name}\" value=\"1\">{$label}</button>\n";
+            }
+        }
         $output .=  ($notCompleteForm) ? "" : "</form>\n";
 
         /*        print "<pre>";

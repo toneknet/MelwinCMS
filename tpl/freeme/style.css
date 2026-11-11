@@ -1,0 +1,135 @@
+.freeme {
+  --ink: #12495e;
+  --surface: #f5f7f7;
+  --line: #dbe5e8;
+  --accent: #4dcc3c;
+  --link: #007a96;
+  margin: 0;
+  background: #fff;
+  color: var(--ink);
+  font: 15px/1.5 system-ui, "Segoe UI", sans-serif;
+}
+
+.freeme-shell { display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 100vh; }
+.freeme-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  box-sizing: border-box;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 24px;
+  background: #112b3b;
+}
+.freeme-brand { display: grid; place-items: center; min-height: 72px; margin-bottom: 24px; }
+.freeme-brand img { object-fit: contain; }
+.freeme-workspace { display: flex; flex-direction: column; min-width: 0; }
+.freeme-width { width: min(1200px, calc(100% - 48px)); margin-inline: auto; }
+.freeme-heading, .freeme-footer { background: var(--surface); }
+.freeme-heading { padding: 38px 0 14px; border-bottom: 1px solid var(--line); }
+.freeme-heading h1 { margin: 0; font-size: clamp(25px, 3vw, 32px); font-weight: 350; letter-spacing: -.02em; overflow-wrap: anywhere; }
+.freeme-main { flex: 1; padding-block: 24px 48px; overflow-x: auto; }
+.freeme-main .container { box-sizing: border-box; width: 100%; max-width: none; padding: 0; }
+.freeme-main a, .freeme-footer a { color: var(--link); }
+.freeme-footer { border-top: 1px solid var(--line); font-size: 14px; }
+.freeme-footer > div:not(:empty) { padding-block: 20px; }
+.freeme-feedback:empty { display: none; }
+.freeme-feedback:not(:empty) { padding-top: 16px; }
+.freeme-skip { position: fixed; top: -100px; left: 12px; z-index: 10001; background: #fff; color: var(--ink); padding: 10px 14px; }
+.freeme-skip:focus { top: 12px; }
+.freeme :focus-visible { outline: 2px solid #008aa8; outline-offset: 2px; }
+.freeme #page_overlay { position: fixed; inset: 0; z-index: 9999; background: #f5f7f7e8; text-align: center; padding-top: 35vh; }
+
+.freeme .toolbox { display: inline-flex; align-items: center; gap: 4px; vertical-align: middle; white-space: nowrap; }
+.freeme .toolbox a { display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 4px; }
+.freeme .toolbox a:hover, .freeme .toolbox a:focus-visible { background: var(--surface); }
+.freeme .toolbox:has(> a) > svg { display: none; }
+
+.freeme.freeme-auth {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  background: var(--surface);
+}
+.freeme-auth-card {
+  box-sizing: border-box;
+  width: min(100%, 420px);
+  padding: clamp(20px, 5vw, 32px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.freeme-auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: calc(-1 * clamp(20px, 5vw, 32px)) calc(-1 * clamp(20px, 5vw, 32px)) 24px;
+  padding: 12px 20px;
+  background: #112b3b;
+  color: #fff;
+}
+.freeme-auth-brand img { height: 48px; object-fit: contain; }
+.freeme-auth-card :is(h1, h2) { margin: 0 0 20px; font-size: 24px; font-weight: 400; }
+.freeme-auth-card label { display: block; margin-bottom: 5px; }
+.freeme-auth-card input { display: block; width: 100%; margin-bottom: 16px; }
+.freeme-auth-card button { width: 100%; }
+.freeme-auth-links:not(:empty) { margin-top: 16px; }
+.freeme-auth-card .frmError { color: #a02929; }
+.freeme-auth-card .frmSuccess { color: #24652c; }
+.freeme-change-password { margin-inline: auto; }
+
+.freeme-main table { border-collapse: collapse; }
+.freeme-main th { background: var(--surface); font-size: 13px; text-transform: uppercase; }
+.freeme-main td, .freeme-main th { padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.freeme-main :is(input, select, textarea) { accent-color: var(--link); }
+.freeme-main :is(input:not([type]), input[type=text], input[type=email], input[type=number], input[type=date], input[type=search], select, textarea) {
+  max-width: 100%;
+  border-color: #bdcfd5;
+  color: var(--ink);
+  border-radius: 4px;
+}
+.freeme-main input[type=search] { border-radius: 24px; background: var(--surface); }
+.freeme-main :is(.button, button, input[type=submit], input[type=button]) {
+  border-color: #bdcfd5;
+  border-radius: 4px;
+  color: var(--ink);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.freeme-main :is(.button-primary, input[type=submit]) {
+  background: var(--accent);
+  border-color: #3cb72e;
+  color: #102e16;
+}
+.freeme-main :is(.button-primary, input[type=submit]):hover { background: #42bf32; color: #102e16; }
+
+#dbform .counter { display: none;}
+
+/* Navigation module variants. */
+.freeme .freeme-navigation nav,.freeme .freeme-navigation #myTopnav,.freeme .freeme-navigation #navcontainer { background:transparent; width:100%; height:auto; overflow:visible; }
+.freeme .freeme-navigation ul { float:none; width:auto; list-style:none; margin:0; padding:0; background:transparent; }
+.freeme .freeme-navigation li,.freeme .freeme-navigation .dropdown { float:none; display:block; position:static; overflow:visible; margin:0 0 4px; }
+.freeme .freeme-navigation a,.freeme .freeme-navigation .dropbtn { display:block; float:none; width:100%; height:auto; min-height:42px; padding:11px 13px; border:0; border-radius:4px; background:transparent; color:#bdcbd3; text-align:left; text-decoration:none; font:500 15px/1.5 system-ui,sans-serif; letter-spacing:0; white-space:normal; text-transform:none; }
+.freeme .freeme-navigation a:hover,.freeme .freeme-navigation .dropbtn:hover { background:#203e50; color:#fff; }
+.freeme .freeme-navigation a.active,.freeme .freeme-navigation .dropbtn.active,.freeme .freeme-navigation a.selected { background:#254354; color:#fff; }
+.freeme .freeme-navigation ul ul,.freeme .freeme-navigation .dropdown-content { position:static; display:block; width:auto; min-width:0; margin:4px 0 12px 13px; padding-left:9px; border-left:1px solid #3c5868; background:transparent; box-shadow:none; }
+.freeme .freeme-navigation ul ul a,.freeme .freeme-navigation .dropdown-content a { font-size:12px; padding:8px 10px; min-height:36px; }
+.freeme .freeme-navigation .dropdown-content[hidden] { display:none; }
+.freeme .freeme-navigation .icon { display:none; }
+.freeme .freeme-navigation .float_right { float:none !important; margin-top:20px; }
+.freeme .freeme-navigation > br { display:none; }
+
+@media (max-width: 700px) {
+  .freeme-shell { display: block; }
+  .freeme-sidebar { position: static; height: auto; padding: 12px 16px; }
+  .freeme-brand { min-height: 52px; margin-bottom: 8px; }
+  .freeme-width { width: calc(100% - 32px); }
+  .freeme-heading { padding-top: 20px; }
+  .freeme-main .column, .freeme-main .columns { width: 100%; float: none; margin-left: 0; }
+}
+@media print {
+  .freeme-shell, .freeme-workspace { display: block; }
+  .freeme .noprint, .freeme-skip, .freeme #page_overlay { display: none !important; }
+  .freeme-main { width: 100%; padding: 0; overflow: visible; }
+}

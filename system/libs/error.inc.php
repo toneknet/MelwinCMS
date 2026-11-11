@@ -24,253 +24,148 @@
  * THE SOFTWARE.
  */
 
-/**
- * Error handler
- *
- * Handle errors like PHP does it natively but additionaly log them to the
- * application error log file.
- * @param int
- * @param string
- * @param string
- * @param int
- */
+/** Return trace locations only: never log arguments or objects. */
+function app_error_trace(array $trace)
+{
+    $result = array();
+    foreach (array_slice($trace, 0, 50) as $frame) {
+        $result[] = array_intersect_key($frame, array_flip(array('file', 'line', 'class', 'type', 'function')));
+    }
+    return $result;
+}
+
+/** Build context without sessions, request bodies, query strings or credentials. */
+function app_error_context($file, array $trace)
+{
+    $module = null;
+    foreach (array_merge(array(array('file' => $file)), $trace) as $frame) {
+        if (preg_match('~/system/modules/([^/]+)/~', str_replace('\\', '/', $frame['file'] ?? ''), $match)) {
+            $module = $match[1];
+            break;
+        }
+    }
+    $cli = PHP_SAPI === 'cli';
+    return array(
+        'execution' => $cli ? 'cli' : 'web',
+        'path' => $cli ? null : explode('?', $_SERVER['REQUEST_URI'] ?? '', 2)[0],
+        'method' => $cli ? null : ($_SERVER['REQUEST_METHOD'] ?? null),
+        'script' => $_SERVER['SCRIPT_FILENAME'] ?? null,
+        'module' => $module
+    );
+}
+
+/** One JSON record per incident; retain PHP's configured error-log destination. */
+function app_log_error($level, $type, $message, $file, $line, array $trace, $code = 0)
+{
+    static $logging = false;
+    $id = str_replace('.', '', uniqid('err-', true));
+    $record = array(
+        'timestamp' => date('c'),
+        'error_id' => $id,
+        'level' => $level,
+        'type' => $type,
+        'message' => $message,
+        'code' => $code,
+        'file' => $file,
+        'line' => $line,
+        'context' => app_error_context($file, $trace),
+        'trace' => app_error_trace($trace)
+    );
+    if ($logging) {
+        return $record;
+    }
+    $logging = true;
+    try {
+        $json = json_encode($record, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE | JSON_PARTIAL_OUTPUT_ON_ERROR);
+        if ($json === false || !@error_log($json)) {
+            // Avoid recursively logging failures of the logger itself.
+            @error_log('Error logging failed; error ID: ' . $id, 4);
+        }
+    } finally {
+        $logging = false;
+    }
+    return $record;
+}
+
 function __error($intType, $strMessage, $strFile, $intLine)
 {
-	// print __FUNCTION__;
-	$arrErrors = array(
-		E_ERROR             => 'Fatal error',
-		E_WARNING           => 'Warning',
-		E_PARSE             => 'Parsing error',
-		E_NOTICE            => 'Notice',
-		E_CORE_ERROR        => 'Core error',
-		E_CORE_WARNING      => 'Core warning',
-		E_COMPILE_ERROR     => 'Compile error',
-		E_COMPILE_WARNING   => 'Compile warning',
-		E_USER_ERROR        => 'Fatal error',
-		E_USER_WARNING      => 'Warning',
-		E_USER_NOTICE       => 'Notice',
-		// E_STRICT            => 'Runtime notice',
-		4096                => 'Recoverable error',
-		8192                => 'Deprecated notice'
-	);
-
-	// Ignore functions with an error control operator (@function_name)
-	if (ini_get('error_reporting') > 0) {
-		if ($intType != E_NOTICE) //|| 1==1
-		{
-			$e = new Exception();
-			// Log error
-			error_log(sprintf(
-				'PHP %s: %s in %s on line %s, OUTPUT: %s',
-				$arrErrors[$intType],
-				$strMessage,
-				$strFile,
-				$intLine,
-				$e->getTraceAsString()
-			));
-
-			// Display error
-			if (ini_get('display_errors')) {
-				$strMessage = sprintf(
-					'<strong>%s</strong>: %s in <strong>%s</strong> on line <strong>%s</strong>',
-					$arrErrors[$intType],
-					$strMessage,
-					$strFile,
-					$intLine
-				);
-
-				$e = new Exception();
-				$strMessage .= "\n" . '<pre style="margin: 11px 0 0 0;">' . "\n" . $e->getTraceAsString() . "\n" . '</pre>';
-
-				echo '<br />' . $strMessage;
-				show_help_message();
-			}
-		}
-
-		// Exit on severe errors
-		if (in_array($intType, array(E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR))) {
-
-			show_help_message();
-			//            $GLOBALS['ERROR']=true;
-			exit;
-		}
-	}
-	//    else {
-	//        header('HTTP/1.1 500 Internal Server Error');
-	//
-	// 		echo 'An error occurred while executing this script!';
-	//        exit();
-	//    }
+    if (!(error_reporting() & $intType)) {
+        return false; // Respect explicit suppression, including @.
+    }
+    $fatal = in_array($intType, array(E_ERROR, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR, E_RECOVERABLE_ERROR), true);
+    $names = array(
+        E_ERROR => 'E_ERROR', E_WARNING => 'E_WARNING', E_PARSE => 'E_PARSE',
+        E_NOTICE => 'E_NOTICE', E_CORE_ERROR => 'E_CORE_ERROR', E_CORE_WARNING => 'E_CORE_WARNING',
+        E_COMPILE_ERROR => 'E_COMPILE_ERROR', E_COMPILE_WARNING => 'E_COMPILE_WARNING',
+        E_USER_ERROR => 'E_USER_ERROR', E_USER_WARNING => 'E_USER_WARNING', E_USER_NOTICE => 'E_USER_NOTICE',
+        E_RECOVERABLE_ERROR => 'E_RECOVERABLE_ERROR', E_DEPRECATED => 'E_DEPRECATED',
+        E_USER_DEPRECATED => 'E_USER_DEPRECATED', 2048 => 'E_STRICT'
+    );
+    $level = $fatal ? 'error' : (in_array($intType, array(E_NOTICE, E_USER_NOTICE, E_DEPRECATED, E_USER_DEPRECATED, 2048), true) ? 'notice' : 'warning');
+    $trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 51);
+    array_shift($trace);
+    $record = app_log_error($level, $names[$intType] ?? 'PHP_ERROR', $strMessage, $strFile, $intLine, $trace, $intType);
+    if ($fatal) {
+        show_help_message($record);
+    }
+    // Recoverable warnings must not interrupt the response or corrupt JSON/AJAX.
+    return true;
 }
 
-
-/**
- * Exception handler
- *
- * Log exceptions in the application log file and print them to the screen
- * if "display_errors" is set. Callback to a custom exception handler defined
- * in the application file "config/error.php".
- * @param object
- */
 function __exception($e)
 {
-	// print_r($e);
-	print __FILE__ . "@" . __LINE__ . ":" . __FUNCTION__ . "<br />";
-	error_log(sprintf(
-		"PHP Fatal error: Uncaught exception '%s' with message '%s' thrown in %s on line %s",
-		get_class($e),
-		$e->getMessage(),
-		$e->getFile(),
-		$e->getLine()
-	));
-	error_log(implode(";;;", reset(debug_backtrace())));
-	// 20250804 - Kollar om detta ger mig felkoder
-	error_log( json_encode(reset(debug_backtrace())) );
-
-	// Display exception
-	if (ini_get('display_errors')) {
-		$strMessage = sprintf(
-			'<strong>Fatal error</strong>: Uncaught exception <strong>%s</strong> with message <strong>%s</strong> thrown in <strong>%s</strong> on line <strong>%s</strong>',
-			get_class($e),
-			$e->getMessage(),
-			$e->getFile(),
-			$e->getLine()
-		);
-
-		$strMessage .= "\n" . '<pre style="margin: 11px 0 0 0;">' . "\n" . $e->getTraceAsString() . "\n" . '</pre>';
-
-		echo '<br />' . $strMessage;
-		show_help_message();
-	}
-
-	show_help_message();
-	exit;
+    $record = app_log_error('error', get_class($e), $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTrace(), $e->getCode());
+    show_help_message($record);
 }
 
-
-/**
- * Show a special Contao "what to do in case of an error" message
- */
-function show_help_message()
+/** Safe failure response, with the same ID as the server-side log record. */
+function show_help_message($record = null)
 {
-	if (!ini_get('display_errors')) {
-		header('HTTP/1.1 500 Internal Server Error');
-
-		echo 'An error occurred while executing this script!';
-	} else {
-
-		print "ERROR GENERATED: HTTP/1.1 500 Internal Server Error";
-	}
-	ob_end_clean();
-	http_response_code(500);
-	if(is_file(TPLPATH . "500.html")) {
-		include_once(TPLPATH . "500.html");
-	} else {
-		echo 'An error occurred while executing this script!';
-	}
-	die();
+    while (ob_get_level() > 0) {
+        if (!@ob_end_clean()) {
+            break;
+        }
+    }
+    $response = array('message' => 'An error occurred. Please contact the administrator and provide the error ID.', 'error_id' => $record['error_id'] ?? null);
+    if (!empty($GLOBALS['CONFIG']['displayErrors']) && $record !== null) {
+        $response['details'] = $record;
+    }
+    if (PHP_SAPI === 'cli') {
+        file_put_contents('php://stderr', json_encode($response, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE) . PHP_EOL);
+        exit(1);
+    }
+    http_response_code(500);
+    $ajax = strtolower($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'xmlhttprequest'
+        || strpos($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json') !== false
+        || strpos($_SERVER['SCRIPT_NAME'] ?? '', '/ajax/') !== false;
+    if (!headers_sent()) {
+        header('Cache-Control: no-store');
+        header('Content-Type: ' . ($ajax ? 'application/json' : 'text/html') . '; charset=UTF-8');
+    }
+    if ($ajax) {
+        echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
+    } else {
+        $escape = function ($text) { return htmlspecialchars((string) $text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'); };
+        $reference = $response['error_id'] !== null
+            ? '<div class="error-reference"><span>Please provide this error ID when contacting the administrator</span><code>' . $escape($response['error_id']) . '</code></div>' : '';
+        $details = '';
+        if (isset($response['details'])) {
+            $details = '<details class="error-details"><summary>Technical details</summary><pre>' . $escape(json_encode($record, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE)) . '</pre></details>';
+        }
+        $template = @file_get_contents(dirname(__DIR__, 2) . '/tpl/500.html');
+        if ($template === false) {
+            $template = '<!doctype html><html lang="en"><meta charset="utf-8"><title>An error occurred</title><body><h1>An error occurred</h1><p>Please contact the administrator and provide the error ID.</p><!-- ERROR_REFERENCE --><!-- ERROR_DETAILS --></body></html>';
+        }
+        echo strtr($template, array('<!-- ERROR_REFERENCE -->' => $reference, '<!-- ERROR_DETAILS -->' => $details));
+    }
+    exit(1);
 }
 
-
-/**
- * Set error and exception handler
- */
-@set_error_handler('__error');
-@set_exception_handler('__exception');
-
-/**
- * Log PHP errors
- */
-@ini_set('error_log', 'system/logs/error.log');
-
-/**
- * Set error_reporting
- */
-@ini_set('display_errors', ($GLOBALS['CONFIG']['displayErrors'] ? 1 : 0));
-error_reporting(($GLOBALS['CONFIG']['displayErrors'] ? E_ALL : 0));
-
-//if (isSuperUser()) {
-//	print "HEY";
-/*
-	ini_set('display_errors', 1);
-	ini_set('display_startup_errors', 1);
-	error_reporting(E_COMPILE_WARNING     );//E_ALL
-  */
-//}
-
-//function db_reporting($query)
-//{
-//	$filename = 'system/logs/db.log';
-//	$somecontent = $query."\n";
-//
-//
-//// INTE SKRIVA OM
-//// user, company, page, groups,
-//
-//
-//    if (!$handle = fopen($filename, 'a')) {
-//		touch($filename);
-//    }
-//
-//    if (fwrite($handle, $somecontent) === FALSE) {
-//		return;
-//    }
-//
-//    fclose($handle);
-//}
-
-
-
-/*
-
-// we will do our own error handling.
-error_reporting(0); // Turns off all error reporting.
-
-// user defined error handling function.
-function userErrorHandler($errno, $errmsg, $filename, $linenum, $vars)
-{
-    // timestamp for the error entry.
-    $dt = date('Y-m-d H:i:s (T)');
-
-    // define an assoc array of error string
-    // in reality the only entries we should
-    // consider are E_WARNING, E_NOTICE, E_USER_ERROR,
-    // E_USER_WARNING and E_USER_NOTICE.
-    $errortype = array (
-                E_ERROR => 'Error',
-                E_WARNING => 'Warning',
-                E_PARSE => 'Parsing Error',
-                E_NOTICE => 'Notice',
-                E_CORE_ERROR => 'Core Error',
-                E_CORE_WARNING => 'Core Warning',
-                E_COMPILE_ERROR => 'Compile Error',
-                E_COMPILE_WARNING => 'Compile Warning',
-                E_USER_ERROR => 'User Error',
-                E_USER_WARNING => 'User Warning',
-                E_USER_NOTICE => 'User Notice',
-                E_STRICT => 'Runtime Notice'
-                );
-    // set of errors for which a var trace will be saved.
-    $user_errors = array(E_USER_ERROR, E_USER_WARNING, E_USER_NOTICE);
-
-    $err = "<errorentry>\n";
-    $err .= "\t<datetime>" .$dt. "</datetime>\n";
-    $err .= "\t<errornum>" .$errno. "</errornum>\n";
-    $err .= "\t<errortype>" .$errortype[$errno]. "</errortype>\n";
-    $err .= "\t<errormsg>" .$errmsg. "</errormsg>\n";
-    $err .= "\t<scriptname>" .$filename. "</scriptname>\n";
-    $err .= "\t<scriptlinenum>" .$linenum. "</scriptlinenum>\n";
-
-    if (in_array($errno, $user_errors)) {
-        $err .= "\t<vartrace>" .wddx_serialize_value($vars, 'Variables'). "</vartrace>\n";
-    }
-    $err .= "</errorentry>\n\n";
-
-    // save to the error log file, and e-mail me if there is a critical user error.
-    error_log($err, 3, '../error_log.log');
-    if ($errno == E_USER_ERROR) {
-        mail('martintonek@gmail.com', 'Critical User Error', $err);
-    }
-}
-$old_error_handler = set_error_handler('userErrorHandler');
-*/
+// Log independently of displayErrors. PHP-native failures keep their fallback log.
+ini_set('error_log', dirname(__DIR__) . '/logs/error.log');
+ini_set('log_errors', '1');
+ini_set('display_errors', '0');
+ini_set('display_startup_errors', '0');
+error_reporting(E_ALL);
+set_error_handler('__error');
+set_exception_handler('__exception');

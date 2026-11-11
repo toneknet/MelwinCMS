@@ -1,0 +1,57 @@
+/* Freeme's baseline loads before module and plugin styles. */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+:where(img, svg, video, canvas) { max-width: 100%; }
+:where(img, video) { height: auto; }
+:where(button, input, select, textarea) { font: inherit; color: inherit; }
+:where(fieldset) { min-inline-size: 0; }
+:where(th) { text-align: start; }
+
+:where(.freeme-main) :where(input:not([type]), input[type=text], input[type=email], input[type=password], input[type=number], input[type=date], input[type=search], input[type=tel], input[type=url], select, textarea) {
+  min-height: 38px;
+  padding: 7px 10px;
+  border: 1px solid #bdcfd5;
+  border-radius: 4px;
+  background: #fff;
+}
+:where(.freeme-main) :where(.button, button, input[type=submit], input[type=button], input[type=reset]) {
+  display: inline-block;
+  min-height: 38px;
+  padding: 7px 14px;
+  border: 1px solid #bdcfd5;
+  border-radius: 4px;
+  background: #fff;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+:where(.freeme-main) :where(button, input, select, textarea):disabled { cursor: default; opacity: .65; }
+
+/* Utilities used by module markup. */
+.hidden { display: none; }
+.nowrap { white-space: nowrap; }
+.forceWrap { overflow-wrap: anywhere; }
+.u-full-width { width: 100%; }
+.u-max-full-width { max-width: 100%; }
+.float_left, .u-pull-left { float: left; }
+.float_right, .u-pull-right { float: right; }
+.right { text-align: right; }
+.row::after, .u-cf::after { content: ""; display: table; clear: both; }
+
+@media (min-width: 701px) {
+  :where(.row) > :where(.column, .columns) { float: left; }
+  :where(.row) > :where(.column, .columns) + :where(.column, .columns) { margin-left: 4%; }
+  :where(.row) > .one { width: 4.6667%; }
+  :where(.row) > .two { width: 13.3333%; }
+  :where(.row) > .three { width: 22%; }
+  :where(.row) > .four, :where(.row) > .one-third { width: 30.6667%; }
+  :where(.row) > .five { width: 39.3333%; }
+  :where(.row) > .six, :where(.row) > .one-half { width: 48%; }
+  :where(.row) > .seven { width: 56.6667%; }
+  :where(.row) > .eight, :where(.row) > .two-thirds { width: 65.3333%; }
+  :where(.row) > .nine { width: 74%; }
+  :where(.row) > .ten { width: 82.6667%; }
+  :where(.row) > .eleven { width: 91.3333%; }
+  :where(.row) > .twelve { width: 100%; }
+}

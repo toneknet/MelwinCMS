@@ -101,6 +101,10 @@ class userbar {
         }*/
 
         $db = db::getInstance();
+        // Get page here
+        $ArrPage =  $db->o_get_row('page_content' ,"SELECT b.src FROM [table] as a JOIN ".$db->o_prefix('page')." as b on a.pid=b.id WHERE a.module='menumaker' and a.deleted=0 and b.deleted=0 ");
+        $page = isset($ArrPage['src']) && !empty($ArrPage['src']) && !is_null($ArrPage['src']) ? $ArrPage['src'] : "";
+        // pre($page);
         // En select här
         $arrAnswer = $db->o_get_all('company' ,"SELECT * FROM [table] WHERE deleted=0 ");
         if (count($arrAnswer)>0) {
@@ -140,14 +144,14 @@ class userbar {
         print $_SESSION['missing_link'];*/
 
 
-
+        
         // Statiska länkar här!
         $pageid = route::$pageid ?? NULL;
         print ($this->useUL) ? "<li style='float:right;'>" :"";
         // print "<p style='float:right;'>";
         // TODO: göra sidorna dynamiska istället
-        print "<a href='" . $GLOBALS['CONFIG']['www-root'] ."/settings/page?action=edit&id={$pageid}'>" . getIconFull('edit') ."</a>";
-        print "<a href='" . $GLOBALS['CONFIG']['www-root'] ."/settings/page?action=module&id={$pageid}'>" . getIconFull('module') ."</a>";
+        print "<a href='" . $GLOBALS['CONFIG']['www-root'] ."{$page}?action=edit&id={$pageid}'>" . getIconFull('edit') ."</a>";
+        print "<a href='" . $GLOBALS['CONFIG']['www-root'] ."{$page}?action=module&id={$pageid}'>" . getIconFull('module') ."</a>";
         // print "</p>";
         print ($this->useUL) ? "</li>" :"";
       

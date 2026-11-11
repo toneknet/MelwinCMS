@@ -36,6 +36,9 @@ $GLOBALS['LANG']['SYSTEM']['companyid'] = array('Företags ID', '');
 $GLOBALS['LANG']['SYSTEM']['deleted'] = array('Raderad', '');
 $GLOBALS['LANG']['SYSTEM']['ordning'] = array('Ordning', '');
 
+// LIB : DB
+$GLOBALS['LANG']['DB']['log_error'] = array("Databas fel!","Något har gått fel. Anteckna datum och klockslag för att kontakta systemadministratör");
+
 // TABLE: VEHICLE
 
 $GLOBALS['LANG']['vehicle']['id'] = array('ID', '');
@@ -154,7 +157,7 @@ $GLOBALS['LANG']['user']['error_email_missing'] = "Du har inte angivit någon ep
 $GLOBALS['LANG']['user']['ok_mail'] = "Ett meddelande har skickats till den nya användaren!";
 $GLOBALS['LANG']['user']['sendemail'] = array('Ta emot körordrar via epost', 'Användaren vill ta emot körordrar via epost');
 $GLOBALS['LANG']['user']['lostpassword'] = array('Skicka mejl om nytt lösenord', '');
-
+$GLOBALS['LANG']['user']['superadmin'] = array('Superanvändare','');
 // TABLE: CUSTOMERS
 $GLOBALS['LANG']['customers']['id'] = array('Kundnr', 'Här anges Kundnumret');
 $GLOBALS['LANG']['customers']['customer_type'] = array('Kundtyp', 'Här anges om personen är företag eller privatperson');

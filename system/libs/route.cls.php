@@ -193,6 +193,17 @@ class route
             }
         }
     }
+    public static function getURLbyID(int $id): string
+    {
+        $db = db::getInstance();
+        $page = $db->o_get_row('page', "SELECT id,src FROM [table] WHERE id=" . $id . " AND deleted=0");
+        // pre($page);
+        if (empty($page['src'])) return '';
+        // pre($GLOBALS['CONFIG']['www-root'] . $page['src']);
+        return $GLOBALS['CONFIG']['www-root'] . $page['src'];
+        // return 'TEST';
+    }
+
     public static function getPageStructureIDOnly()
     {
         $db = db::getInstance();
